@@ -4,6 +4,7 @@ from omegaconf import DictConfig
 from pathlib import Path
 
 from tqdm import tqdm
+from hydra.utils import instantiate
 import cv2
 from NTracker.tracking.tracker import Tracker
 from NTracker.utils import utils
@@ -16,10 +17,17 @@ class Track:
     def run(self):
 
         images_path = Path(self.cfg.images_path)
+        num_instances = self.cfg.tracker.num_instances
+        filter_n_instances = self.cfg.tracker.filter_n_instances
+        init_instances = self.cfg.tracker.init_instances
+        filter_score = self.cfg.tracker.filter_score
         load_images = self.cfg.tracker.load_images
 
-        
+        # Tracker object
         tracker = Tracker(self.cfg)
+
+        # Annotations parser
+        annotations_parser = instantiate(self.cfg.annotations_parser)
 
         # List input images
         images_paths = [i for i in images_path.iterdir()
@@ -33,65 +41,60 @@ class Track:
         end_frame = (self.cfg.end_frame
                      if self.cfg.end_frame is not None else len(images_path))
 
-    # init_instances = config["tracking"]["init_instances"]
-    # end_frame = len(images_paths) if end_frame < 0 else end_frame
-        
         try:
             for img_i, img_path in enumerate(
                 tqdm(images_path[start_frame:end_frame])
             ):
                 # Read image
                 if load_images:
-                    img = cv2.imread(str(img_path))
-                    if img is None:
-                        raise IOError(f"Can not read image {str(img_path)}")
+                   img = utils.read_image(img_path)
                 else:
                     img = None
                 
                 # Read annotation
-                coco = coco_path.joinpath(img_path.stem + ".json")
-                assert coco.exists(), coco
-                instances = utils.read_coco(coco)
+                instances = annotations_parser.read(img_path)
                 instances = {i: x for i, x in enumerate(instances)}
 
                 # Filter num instances
-                n_ins = config["tracking"]["num_instances"]
-                if (config["tracking"]["filter_frames"] and
-                    n_ins != len(instances)):
+                if filter_n_instances and len(instances) != num_instances:
                     continue
-                
                 if init_instances is not None:
                     if init_instances != len(instances):
                         continue
                     else:
                         init_instances = None
                 
-                if config["tracking"]["filter_instances"]:
-                    if n_ins != len(instances):
+                # Filter score; get the instances with the best score
+                if filter_score:
+                    if num_instances != len(instances):
                         i_sort = sorted(
                             instances.items(),
-                            key=lambda x: x[1]["score"],
+                            key=lambda x: x[1].score,
                             reverse=True
                         )
                         instances = {
-                            i[0]: i[1] for i in i_sort[:n_ins]
+                            i[0]: i[1] for i in i_sort[:num_instances]
                         }
 
                 # Track
-                tracking.reset()
+                tracker.reset()
                 for i, ins in instances.items():
-                    tracking.add_instance(img, ins, i, img_path)
-                instances = tracking.re_assign(instances)
+                    tracker.add_instance(
+                        mask=ins.mask,
+                        bounding_box=ins.bounding_box,
+                        key=i,
+                        image=img,
+                        image_path=img_path
+                    )
+                assignations = tracker.re_assign()
+                instances = utils.re_assign_dict(instances, assignations)
 
-                # Call tasks
-                out_img = img
-                for t in tasks:
-                    out_img = t.set(img_id, img_path, out_img, instances)
-                image_saver.set_image(img_id, out_img)
+                # TODO: Call tasks
 
         except KeyboardInterrupt:
             pass
 
-    task_results = {t: t.end() for t in tasks}
-    image_saver.close()
-    return task_results
+    # TODO: 
+    # task_results = {t: t.end() for t in tasks}
+    # image_saver.close()
+    # return task_results

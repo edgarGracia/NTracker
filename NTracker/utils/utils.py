@@ -1,7 +1,8 @@
 import re
-from typing import Tuple, List
 from pathlib import Path
+from typing import Dict, List, Tuple, Union
 
+import cv2
 import numpy as np
 
 
@@ -144,3 +145,26 @@ def sort_numerical_paths(paths: List[Path]) -> List[Path]:
         List[Path]: Numerical-ordered list of path.
     """
     return sorted(paths, key=lambda x: extract_numeric_from_string(x.name))
+
+
+def read_image(image_path: Union[Path, str]) -> np.ndarray:
+    img = cv2.imread(str(image_path))
+    if img is None:
+        raise IOError(f"Can not read image {str(image_path)}")
+    return img
+
+
+def re_assign_dict(
+    instances: Dict[int, any],
+    assignations: Dict[int, int]
+) -> Dict[int, any]:
+    """Re-assign the keys of a dictionary based on an assignations dict.
+
+    Args:
+        instances (Dict[int, any]): Instances dict.
+        assignations (Dict[int, int]): Assignations dict (previous_key: new_key).
+
+    Returns:
+        Dict[int, any]: The re-assigned ``instances`` dict.
+    """
+    return {n: instances[p] for p, n in assignations.items()}

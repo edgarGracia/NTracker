@@ -1,5 +1,6 @@
 import json
-from pathlib import List, Path
+from pathlib import Path
+from typing import List, Union
 
 import pycocotools.mask as Mask
 
@@ -8,10 +9,20 @@ from NTracker.utils.instance import Instance
 
 class CocoResultsParser:
 
-    def __init__(self, base_path: Path):
-        self.base_path = base_path
+    def __init__(self, base_path: Union[Path, str]):
+        self.base_path = Path(base_path)
 
-    def read(self, image_path: Path) -> List[Instance]:
+    def read(self, image_path: Union[Path, str]) -> List[Instance]:
+        """Read the annotations from one image.
+
+        Args:
+            image_path (Union[Path, str]): Image path. Its name is used to get
+                the correct annotation.
+
+        Returns:
+            List[Instance]: List of instances.
+        """
+        image_path = Path(image_path)
         annotations_path = self.base_path / (image_path.stem + ".json")
         annotations = json.loads(annotations_path.read_text())
 
@@ -34,7 +45,7 @@ class CocoResultsParser:
                     score=annot.get("score"),
                     id=annot.get("id"),
                     mask=mask,
-                    # label=,
+                    label=None,
                     label_id=annot.get("category_id"),
                     image_id=annot.get("image_id")
                 )

@@ -65,7 +65,7 @@ class PositionTracker:
         else:
             thr_mat = np.full_like(dist_mat, False, dtype="bool")
 
-        if self.square:
+        if self.square_position:
             dist_mat = dist_mat**2
 
         # Normalize

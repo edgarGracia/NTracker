@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Optional, Tuple
 
 import numpy as np
@@ -22,3 +23,12 @@ class Instance:
         self.label = label
         self.label_id = label_id
         self.image_id = image_id
+
+    def dict(self) -> dict:
+        return deepcopy(
+            {k: v for k, v in self.__dict__.items()
+             if not k.startswith("_") and k != "dict"}
+        )
+
+    def __str__(self):
+        return str(self.dict())

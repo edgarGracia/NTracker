@@ -1,0 +1,36 @@
+defaults:
+  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: colorlog
+
+start_frame: null
+end_frame: null
+images_path: null      # To be set
+annotations_path: null # To be set
+images_extensions:
+  - .png
+  - .jpg
+  - .jpeg
+
+annotations_parser:
+  _target_: NTracker.parsers.coco_results_parser.CocoResultsParser
+  base_path: ${annotations_path}
+
+tracker:
+  num_instances: 10
+  filter_n_instances: False  # Only process frames with ``num_instances`` instances
+  init_instances: null       # Number of instances required to start the tracking
+  filter_score: False        # Only take the ``num_instances`` instances with the highest score
+  load_images: True
+  remove_background: True
+  pos_weight:      0.33
+  features_weight: 0.33
+  iou_weight:      0.33
+
+position_tracker:
+  position_threshold: 250  # Maximum position displacement between frames
+  square_position: True    # Square the positions matrix
+
+features_tracker:
+  features_buffer: 5
+  features_threshold: null
+  distance_function: euclidean    # "cosine" or "euclidean"
