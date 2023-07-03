@@ -4,24 +4,27 @@ from typing import Dict, List, Tuple, Union
 
 import cv2
 import numpy as np
+from scipy.spatial import distance
 
 
 def compute_dist_matrix(
     a: np.ndarray,
     b: np.ndarray,
-    distance: str = "euclidean"
+    metric: Union[str, callable] = "euclidean"
 ) -> np.ndarray:
     """Compute the distance between two sets of vectors.
 
     Args:
         a (np.ndarray): Array of vectors of shape (m, c)
         b (np.ndarray): Array of vectors of shape (n, c)
+        metric: (Union[str, callable], optional): The distance metric to use.
+            See ``scipy.spatial.distance.cdist``.
 
     Returns:
         np.ndarray: A 2D matrix with the distance from each a-vector to each
         b-vectors, of shape (m, n)
     """
-    return distance.cdist(a, b, metric=distance)
+    return distance.cdist(a, b, metric=metric)
 
 
 def box_intersect(
@@ -101,6 +104,10 @@ def crop_image_box(
         np.ndarray: A crop from the image.
     """
     xmin, ymin, xmax, ymax = bounding_box
+    xmin = int(np.clip(xmin, 0, image.shape[1]-1))
+    ymin = int(np.clip(ymin, 0, image.shape[0]-1))
+    xmax = int(np.clip(xmax, 0, image.shape[1]-1))
+    ymax = int(np.clip(ymax, 0, image.shape[0]-1))
     return image[ymin:ymax, xmin:xmax]
 
 

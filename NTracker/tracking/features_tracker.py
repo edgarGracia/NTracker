@@ -22,20 +22,27 @@ class FeaturesTracker:
         self.buffer_len = cfg.features_tracker.features_buffer
         self.features_thr = cfg.features_tracker.features_threshold
         self.features_distance = cfg.features_tracker.distance_function
-        self.feature_len = cfg.features_generator.features_len
 
         if (self.features_distance != "euclidean" and
                 self.features_distance != "cosine"):
             raise NotImplementedError(self.features_distance)
 
+        self.buffer: List[deque] = None
+        self.current_features: Dict[int, np.ndarray] = {}
+
+    def _init_buffer(self, features_len: int):
+        """Initialize the features buffer.
+
+        Args:
+            features_len (tuple): Length of the features vectors.
+        """
         self.buffer = [
             deque(
-                [np.ones(self.feature_len, dtype=np.float64)],
+                [np.ones(features_len, dtype=np.float64)],
                 maxlen=self.buffer_len
             )
             for _ in range(self.num_instances)
         ]
-        self.current_features: Dict[int, np.ndarray] = {}
 
     def add_features(self, features: np.ndarray, key: int):
         """Add a new features vector.
@@ -44,6 +51,8 @@ class FeaturesTracker:
             features (np.ndarray): Features vector.
             key (int): Original instance key.
         """
+        if self.buffer is None:
+            self._init_buffer(len(features))
         self.current_features[key] = features
 
     def reset(self):

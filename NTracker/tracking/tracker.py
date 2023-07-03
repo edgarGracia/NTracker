@@ -7,7 +7,7 @@ from omegaconf import DictConfig
 from scipy.optimize import linear_sum_assignment
 
 from NTracker.tracking.features_tracker import FeaturesTracker
-from NTracker.tracking.mask_iou_tracker import IouTracker
+from NTracker.tracking.mask_iou_tracker import MaskIouTracker
 from NTracker.tracking.position_tracker import PositionTracker
 from NTracker.utils import utils
 
@@ -41,9 +41,9 @@ class Tracker:
             self.features_tracker = None
         
         if self.iou_weight > 0:
-            self.iou_tracker = IouTracker(cfg)
+            self.mask_iou_tracker = MaskIouTracker(cfg)
         else:
-            self.iou_tracker = None
+            self.mask_iou_tracker = None
 
         self.current_keys = set()
 
@@ -57,11 +57,11 @@ class Tracker:
         if self.pos_tracker is not None:
             self.pos_tracker.reset()
 
-        if self.fea_tracker is not None:
-            self.fea_tracker.reset()
+        if self.features_tracker is not None:
+            self.features_tracker.reset()
 
-        if self.iou_tracker is not None:
-            self.iou_tracker.reset()
+        if self.mask_iou_tracker is not None:
+            self.mask_iou_tracker.reset()
 
     def add_instance(
         self,
@@ -103,8 +103,8 @@ class Tracker:
             self.pos_tracker.add_position(pos, key)
 
         # IoU
-        if self.iou_tracker is not None:
-            self.iou_tracker.add_mask(mask, bounding_box, key)
+        if self.mask_iou_tracker is not None:
+            self.mask_iou_tracker.add_mask(mask, bounding_box, key)
 
         # Store the current instance key
         if key in self.current_keys:
@@ -143,8 +143,8 @@ class Tracker:
             dist_mat += (dist * self.features_weight)
             thr_mat = thr_mat + thr
 
-        if self.iou_tracker is not None:
-            dist, thr = self.iou_tracker.compute_distance(curr_keys)
+        if self.mask_iou_tracker is not None:
+            dist, thr = self.mask_iou_tracker.compute_distance(curr_keys)
             dist_mat += (dist * self.iou_weight)
             thr_mat = thr_mat + thr
 
@@ -164,7 +164,7 @@ class Tracker:
             self.pos_tracker.update_previous(curr_keys, curr_idx, prev_idx)
         if self.features_tracker is not None:
             self.features_tracker.update_previous(curr_keys, curr_idx, prev_idx)
-        if self.iou_tracker is not None:
-            self.iou_tracker.update_previous(curr_keys, curr_idx, prev_idx)
+        if self.mask_iou_tracker is not None:
+            self.mask_iou_tracker.update_previous(curr_keys, curr_idx, prev_idx)
 
-        return {pi: curr_keys[ci] for ci,pi in zip(curr_idx, prev_idx)}
+        return {curr_keys[ci]: pi for ci,pi in zip(curr_idx, prev_idx)}

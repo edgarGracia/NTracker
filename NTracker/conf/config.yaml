@@ -2,6 +2,12 @@ defaults:
   - override hydra/job_logging: colorlog
   - override hydra/hydra_logging: colorlog
 
+hydra:
+  job_logging:
+    handlers:
+      file:
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+
 start_frame: null
 end_frame: null
 images_path: null      # To be set
@@ -14,6 +20,9 @@ images_extensions:
 annotations_parser:
   _target_: NTracker.parsers.coco_results_parser.CocoResultsParser
   base_path: ${annotations_path}
+
+features_generator:
+  _target_: NTracker.features_generators.dummy.Dummy
 
 tracker:
   num_instances: 10
@@ -33,4 +42,7 @@ position_tracker:
 features_tracker:
   features_buffer: 5
   features_threshold: null
-  distance_function: euclidean    # "cosine" or "euclidean"
+  distance_function: euclidean    # "cosine" or "euclidean". (See ``scipy.spatial.distance.cdist``)
+
+# tasks:
+  # - _target_: NTracker.tasks.track.Track

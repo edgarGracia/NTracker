@@ -74,7 +74,7 @@ class PositionTracker:
 
         return dist_mat, thr_mat
 
-    def update(
+    def update_previous(
         self,
         key_list: List[int],
         curr_idx: List[int],

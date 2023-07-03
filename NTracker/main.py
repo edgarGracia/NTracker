@@ -2,6 +2,7 @@
 import hydra
 from omegaconf import DictConfig
 
+from NTracker.tasks.track import Track
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
@@ -11,6 +12,8 @@ def main(cfg: DictConfig):
     Args:
         cfg (DictConfig): A configuration object.
     """
+    track = Track(cfg)
+    track.run()
     
 
 

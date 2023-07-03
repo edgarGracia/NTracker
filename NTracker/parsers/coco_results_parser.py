@@ -30,7 +30,7 @@ class CocoResultsParser:
         for annot in annotations:
             if "bbox" in annot:
                 xmin, ymin, w, h = annot["bbox"]
-                box = (xmin, ymin, xmin+w, ymin+h)
+                box = (round(xmin), round(ymin), round(xmin+w), round(ymin+h))
             else:
                 box = None
 

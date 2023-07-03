@@ -35,7 +35,7 @@ class MaskIouTracker:
         """Initialize the previous masks array with the correct image size.
 
         Args:
-            image_shape (tuple): Image size tuple
+            image_shape (tuple): Image size tuple.
         """
         self.prev_masks = np.zeros(
             (self.num_instances, image_shape[0], image_shape[1]),
@@ -94,7 +94,7 @@ class MaskIouTracker:
                         executor.submit(
                             mask_iou,
                             masks_list[i],
-                            self.prev_boxes[j]
+                            self.prev_masks[j]
                         )
                     ] = (i, j)
         concurrent.futures.wait(futures)
@@ -128,5 +128,5 @@ class MaskIouTracker:
         masks_list = [self.current_masks[k] for k in key_list]
         boxes_list = [self.current_boxes[k] for k in key_list]
         for ci, pi in zip(curr_idx, prev_idx):
-            self.last_masks[pi] = masks_list[ci]
-            self.last_boxes[pi] = boxes_list[ci]
+            self.prev_masks[pi] = masks_list[ci]
+            self.prev_boxes[pi] = boxes_list[ci]
