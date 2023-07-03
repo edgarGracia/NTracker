@@ -1,0 +1,38 @@
+app_name: NTracker
+description: Tracker based on features, position and mask-IoU that tracks a fixed number of instances and reads the annotation from files.
+
+header: |-
+  ╔══════════╗
+  ║ ${hydra.help.app_name} ║
+  ╚══════════╝
+
+footer: |-
+  Powered by Hydra (https://hydra.cc)
+  Use --hydra-help to view Hydra specific help
+
+template: |-
+  ${hydra.help.header}
+  • Description: ${hydra.help.description}
+  
+  • Run:
+    - With a default config file: python main.py --config-name <config_name>
+    - With a custom config file:  python main.py --config-name <config_name> --config-dir, <config_folder>
+    - Override configuration parameters like: python main.py tracker.num_instances=10
+  
+  • An output folder will be created for each run (with the config used, logs, and output data) in the current execution path.
+  You can change this folder with: hydra.run.dir=<output_path>
+  
+  • Current config:
+  --------------------------------------------------------------------------------
+  $CONFIG
+  --------------------------------------------------------------------------------
+
+  • Common overrides:
+    - images_path
+    - annotations_path
+    - start_frame
+    - end_frame
+    - hydra.run.dir
+
+  --------------------------------------------------------------------------------
+  ${hydra.help.footer}

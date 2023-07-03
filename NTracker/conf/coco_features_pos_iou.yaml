@@ -1,22 +1,10 @@
 defaults:
-  - override hydra/help: main_help
-  - override hydra/job_logging: colorlog
-  - override hydra/hydra_logging: colorlog
-• 
-hydra:
-  job_logging:
-    handlers:
-      file:
-        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+  - config
 
 start_frame: null
 end_frame: null
 images_path: null      # To be set
 annotations_path: null # To be set
-images_extensions:
-  - .png
-  - .jpg
-  - .jpeg
 
 annotations_parser:
   _target_: NTracker.parsers.coco_results_parser.CocoResultsParser
