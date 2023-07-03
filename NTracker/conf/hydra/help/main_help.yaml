@@ -1,5 +1,5 @@
 app_name: NTracker
-description: Tracker based on features, position and mask-IoU that tracks a fixed number of instances and reads the annotation from files.
+description: Tracker based on features, position and mask-IoU that tracks a fixed number of instances and reads the annotations from files.
 
 header: |-
   ╔══════════╗
@@ -16,7 +16,7 @@ template: |-
   
   • Run:
     - With a default config file: python main.py --config-name <config_name>
-    - With a custom config file:  python main.py --config-name <config_name> --config-dir, <config_folder>
+    - With a custom config file:  python main.py --config-name <config_name> --config-dir <config_folder>
     - Override configuration parameters like: python main.py tracker.num_instances=10
   
   • An output folder will be created for each run (with the config used, logs, and output data) in the current execution path.
@@ -32,6 +32,7 @@ template: |-
     - annotations_path
     - start_frame
     - end_frame
+    - tracker.num_instances
     - hydra.run.dir
 
   --------------------------------------------------------------------------------

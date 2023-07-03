@@ -2,7 +2,7 @@ defaults:
   - override hydra/help: main_help
   - override hydra/job_logging: colorlog
   - override hydra/hydra_logging: colorlog
-• 
+ 
 hydra:
   job_logging:
     handlers:
@@ -13,6 +13,7 @@ start_frame: null
 end_frame: null
 images_path: null      # To be set
 annotations_path: null # To be set
+assignations_path: null 
 images_extensions:
   - .png
   - .jpg
