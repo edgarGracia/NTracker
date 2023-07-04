@@ -1,0 +1,39 @@
+# @package visualization
+
+img_background: True
+img_bg_color: [0, 0, 0]
+
+text:
+  visible: True
+  color_by_id: False
+  scale:  1
+  thickness:  1
+  color: [255, 255, 255]
+  palette: null       # Seaborn color palette or list of colors
+  line_space: 15
+  position: BOTTOM_RIGHT # RelativePosition Enum
+  formatter: f"{instance_key}"    # WARNING: This expression will be executed with an ``eval``
+
+text_bg:
+  visible: True
+  color_by_id: True
+  color: [224, 56, 84]
+  alpha: 0.75
+  palette: null       # Seaborn color palette or list of colors
+  margin: 5
+
+box:
+  visible: True
+  color_by_id: True
+  thickness:  1
+  color: [224, 56, 84]
+  alpha: 1
+  palette: null            # Seaborn color palette or list of colors
+  text_position: TOP_LEFT  # RelativePosition Enum
+  fill: False
+
+mask:
+  visible: True
+  alpha: 0.75
+  color: [21, 57, 255]
+  palette: null       # Seaborn color palette or list of colors

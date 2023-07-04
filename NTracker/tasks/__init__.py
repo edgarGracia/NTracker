@@ -1,1 +1,2 @@
 from .save_positions import SavePositions
+from .instance_visualizer import InstanceVisualizer

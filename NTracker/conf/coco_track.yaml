@@ -39,4 +39,5 @@ track: True
 
 tasks:
   - _target_: NTracker.tasks.SavePositions
+  - _target_: NTracker.tasks.InstanceVisualizer
   

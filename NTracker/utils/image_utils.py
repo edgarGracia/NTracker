@@ -43,7 +43,28 @@ def cut_mask_image(image: np.ndarray, mask: np.ndarray) -> np.ndarray:
 
 
 def read_image(image_path: Union[Path, str]) -> np.ndarray:
+    """Read an image from file.
+
+    Args:
+        image_path (Union[Path, str]): Path to the image file.
+
+    Raises:
+        IOError: If the image can not be read.
+
+    Returns:
+        np.ndarray: Numpy BGR image of shape (H, W, 3) and "uint8" type.
+    """
     img = cv2.imread(str(image_path))
     if img is None:
         raise IOError(f"Can not read image {str(image_path)}")
     return img
+
+
+def write_image(path: Union[Path, str], image: np.ndarray):
+    """Write an image to a file.
+
+    Args:
+        path (Union[Path, str]): Path to the image.
+        image (np.ndarray): Numpy BGR image of shape (H, W, 3) and "uint8" type.
+    """
+    cv2.imwrite(str(path), image)
