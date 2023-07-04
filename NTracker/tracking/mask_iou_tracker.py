@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 from omegaconf import DictConfig
 
-from NTracker.utils.utils import box_intersect, mask_iou
+from NTracker.utils.structures import box_intersect, mask_iou
 
 
 class MaskIouTracker:

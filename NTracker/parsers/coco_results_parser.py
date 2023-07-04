@@ -4,7 +4,8 @@ from typing import List, Union
 
 import pycocotools.mask as Mask
 
-from NTracker.utils.instance import Instance
+from NTracker.utils.structures import Instance
+from NTracker.utils import path_utils
 
 
 class CocoResultsParser:
@@ -12,19 +13,28 @@ class CocoResultsParser:
     def __init__(self, base_path: Union[Path, str]):
         self.base_path = Path(base_path)
 
-    def read(self, image_path: Union[Path, str]) -> List[Instance]:
+    def list_annotations(self) -> List[Path]:
+        """Get a sorted list of the annotations on the base path.
+
+        Returns:
+            List[Path]: A sorted list of the annotations files on the base path.
+        """
+        annotations_paths = [
+            i for i in self.base_path.iterdir()
+            if i.suffix.lower() == ".json"
+        ]
+        return path_utils.sort_numerical_paths(annotations_paths)
+
+    def read(self, file_path: Union[Path, str]) -> List[Instance]:
         """Read the annotations from one image.
 
         Args:
-            image_path (Union[Path, str]): Image path. Its name is used to get
-                the correct annotation.
+            file_path (Union[Path, str]): Path to the annotation file.
 
         Returns:
             List[Instance]: List of instances.
         """
-        image_path = Path(image_path)
-        annotations_path = self.base_path / (image_path.stem + ".json")
-        annotations = json.loads(annotations_path.read_text())
+        annotations = json.loads(Path(file_path).read_text())
 
         instances = []
         for annot in annotations:

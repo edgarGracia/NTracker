@@ -9,7 +9,7 @@ from scipy.optimize import linear_sum_assignment
 from NTracker.tracking.features_tracker import FeaturesTracker
 from NTracker.tracking.mask_iou_tracker import MaskIouTracker
 from NTracker.tracking.position_tracker import PositionTracker
-from NTracker.utils import utils
+from NTracker.utils import tracking_utils, image_utils, structures
 
 
 class Tracker:
@@ -39,7 +39,7 @@ class Tracker:
             self.features_tracker = FeaturesTracker(cfg)
         else:
             self.features_tracker = None
-        
+
         if self.iou_weight > 0:
             self.mask_iou_tracker = MaskIouTracker(cfg)
         else:
@@ -86,10 +86,10 @@ class Tracker:
         # Features
         if self.features_tracker is not None:
             if image is not None:
-                image = utils.crop_image_box(image, bounding_box)
+                image = image_utils.crop_image_box(image, bounding_box)
                 if self.remove_bg:
-                    mask_crop = utils.crop_image_box(mask, bounding_box)
-                    image = utils.cut_mask_image(image, mask_crop)
+                    mask_crop = image_utils.crop_image_box(mask, bounding_box)
+                    image = image_utils.cut_mask_image(image, mask_crop)
             feature = self.features_generator.predict(
                 image=image,
                 image_path=image_path,
@@ -99,7 +99,7 @@ class Tracker:
 
         # Position
         if self.pos_tracker is not None:
-            pos = np.array(utils.box_center(bounding_box))
+            pos = np.array(structures.box_center(bounding_box))
             self.pos_tracker.add_position(pos, key)
 
         # IoU
@@ -116,7 +116,7 @@ class Tracker:
 
         Returns:
             Dict[int, int]: Mapping between the un-tracked keys and the
-                assigned tracked keys (previous_key: new_key).
+                assigned tracked keys (original_key: tracked_key).
         """
         # Get the current ids
         curr_keys = sorted(list(self.current_keys))
@@ -163,11 +163,13 @@ class Tracker:
         if self.pos_tracker is not None:
             self.pos_tracker.update_previous(curr_keys, curr_idx, prev_idx)
         if self.features_tracker is not None:
-            self.features_tracker.update_previous(curr_keys, curr_idx, prev_idx)
+            self.features_tracker.update_previous(
+                curr_keys, curr_idx, prev_idx)
         if self.mask_iou_tracker is not None:
-            self.mask_iou_tracker.update_previous(curr_keys, curr_idx, prev_idx)
+            self.mask_iou_tracker.update_previous(
+                curr_keys, curr_idx, prev_idx)
 
         return {
             int(curr_keys[ci]): int(pi)
-            for ci,pi in zip(curr_idx, prev_idx)
+            for ci, pi in zip(curr_idx, prev_idx)
         }

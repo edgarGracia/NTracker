@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 from omegaconf import DictConfig
 
-from NTracker.utils.utils import compute_dist_matrix
+from NTracker.utils.tracking_utils import compute_dist_matrix
 
 
 class FeaturesTracker:
