@@ -73,7 +73,7 @@ def draw_text(
     scale: int = 1,
     thickness: int = 1,
     border: int = 0,
-    border_color: Tuple[int, int, int] = (0,0,0),
+    border_color: Tuple[int, int, int] = (0, 0, 0),
     line_space: int = 15,
     relative_position: Union[RelativePosition,
                              str] = RelativePosition.TOP_RIGHT,
@@ -291,9 +291,10 @@ def draw_mask(
     """
     if alpha <= 0:
         return image
-    mask_pixels = image[mask==True]
+    mask_pixels = image[mask == True]
     color_mask = np.full_like(mask_pixels, color)
-    image[mask==True] = cv2.addWeighted(mask_pixels, 1-alpha, color_mask, alpha, 0)
+    image[mask == True] = cv2.addWeighted(
+        mask_pixels, 1-alpha, color_mask, alpha, 0)
     return image
 
 
@@ -322,13 +323,13 @@ def draw_position(
     """
     if border > 0:
         image = cv2.circle(
-                image,
-                position,
-                size+border,
-                border_color,
-                -1,
-                1
-            )
+            image,
+            position,
+            size+border,
+            border_color,
+            -1,
+            1
+        )
     image = cv2.circle(
         image,
         position,

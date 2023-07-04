@@ -4,8 +4,8 @@ from typing import List, Union
 
 import pycocotools.mask as Mask
 
-from NTracker.utils.structures import Instance
 from NTracker.utils import path_utils
+from NTracker.utils.structures import Instance
 
 
 class CocoResultsParser:
