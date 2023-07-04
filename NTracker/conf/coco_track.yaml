@@ -37,5 +37,6 @@ features_tracker:
 assignations_path: null
 track: True
 
-tasks: []
+tasks:
+  - _target_: NTracker.tasks.SavePositions
   

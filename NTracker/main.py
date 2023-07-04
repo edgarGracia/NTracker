@@ -5,7 +5,9 @@ from hydra.utils import instantiate
 from omegaconf import DictConfig
 
 from NTracker.tracking.run_tracker import run_tracker
-from NTracker.utils.assignations_utils import load_assignations, save_assignations
+from NTracker.utils.path_utils import get_run_path
+from NTracker.utils.assignations_utils import (load_assignations,
+                                               save_assignations)
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +19,7 @@ def main(cfg: DictConfig):
     Args:
         cfg (DictConfig): A configuration object.
     """
+    logger.info(f"Run path: {get_run_path()}")
     if cfg.track:
         # Perform the tracking
         assignations = run_tracker(cfg)
@@ -29,7 +32,7 @@ def main(cfg: DictConfig):
     for task_params in cfg.tasks:
         logger.info(f"Running task: {task_params._target_}")
         task = instantiate(task_params, cfg=cfg, _recursive_=False)
-        task.run()
+        task.run(assignations)
 
 
 if __name__ == "__main__":

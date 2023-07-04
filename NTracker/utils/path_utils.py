@@ -33,12 +33,12 @@ def sort_numerical_paths(paths: List[Path]) -> List[Path]:
     return sorted(paths, key=lambda x: extract_numeric_from_string(x.name))
 
 
-def get_run_path(sub_path: Optional[Union[Path, str]]) -> Path:
+def get_run_path(sub_path: Optional[Union[Path, str]] = None) -> Path:
     """Get the current hydra run path.
 
     Args:
-        sub_path (Optional[Union[Path, str]]): Optional sub path to append to
-            the run path.
+        sub_path (Optional[Union[Path, str]], optional): Optional sub path to
+            append to the run path. Defaults to None.
 
     Returns:
         Path: The hydra run path.
