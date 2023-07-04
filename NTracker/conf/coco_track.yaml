@@ -33,6 +33,8 @@ features_tracker:
   features_threshold: null
   distance_function: euclidean    # "cosine" or "euclidean". (See ``scipy.spatial.distance.cdist``)
 
-tasks:
-  - _target_: NTracker.tasks.Track
+assignations_path: null
+track: True
+
+tasks: []
   

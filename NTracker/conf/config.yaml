@@ -13,7 +13,6 @@ start_frame: null
 end_frame: null
 images_path: null      # To be set
 annotations_path: null # To be set
-assignations_path: null 
 images_extensions:
   - .png
   - .jpg
@@ -45,3 +44,6 @@ features_tracker:
   features_buffer: 5
   features_threshold: null
   distance_function: euclidean    # "cosine" or "euclidean". (See ``scipy.spatial.distance.cdist``)
+
+assignations_path: null
+track: True   # Perform the tracking. If False it will load the assignations from the ``assignations_path`` file.

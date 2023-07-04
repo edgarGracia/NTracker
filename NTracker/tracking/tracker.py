@@ -167,4 +167,7 @@ class Tracker:
         if self.mask_iou_tracker is not None:
             self.mask_iou_tracker.update_previous(curr_keys, curr_idx, prev_idx)
 
-        return {curr_keys[ci]: pi for ci,pi in zip(curr_idx, prev_idx)}
+        return {
+            int(curr_keys[ci]): int(pi)
+            for ci,pi in zip(curr_idx, prev_idx)
+        }

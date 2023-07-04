@@ -1,6 +1,8 @@
 import re
 from pathlib import Path
-from typing import Dict, List, Tuple, Union
+from typing import List, Tuple, Union, Optional
+from hydra.core.hydra_config import HydraConfig
+
 
 import cv2
 import numpy as np
@@ -161,17 +163,8 @@ def read_image(image_path: Union[Path, str]) -> np.ndarray:
     return img
 
 
-def re_assign_dict(
-    instances: Dict[int, any],
-    assignations: Dict[int, int]
-) -> Dict[int, any]:
-    """Re-assign the keys of a dictionary based on an assignations dict.
-
-    Args:
-        instances (Dict[int, any]): Instances dict.
-        assignations (Dict[int, int]): Assignations dict (previous_key: new_key).
-
-    Returns:
-        Dict[int, any]: The re-assigned ``instances`` dict.
-    """
-    return {n: instances[p] for p, n in assignations.items()}
+def get_run_path(sub_path: Optional[Union[Path, str]]) -> Path:
+    run_path = Path(HydraConfig.get().runtime.output_dir)
+    if sub_path:
+        run_path = run_path.joinpath(sub_path)
+    return run_path

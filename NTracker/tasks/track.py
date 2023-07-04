@@ -1,8 +1,6 @@
 import logging
 from pathlib import Path
 
-import hydra
-from hydra.core.hydra_config import HydraConfig
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 from tqdm import tqdm
@@ -29,7 +27,6 @@ class Track:
         """Run the tracking.
         """
         logger.info(f"Tracking annotations on: {self.cfg.annotations_path}")
-        logger.info(f"Output path: {HydraConfig.get().runtime.output_dir}")
 
         images_path = Path(self.cfg.images_path)
         num_instances = self.cfg.tracker.num_instances
@@ -56,6 +53,7 @@ class Track:
         end_frame = (self.cfg.end_frame
                      if self.cfg.end_frame is not None else len(images_paths))
 
+        final_assignations = {}
         try:
             for img_i, img_path in enumerate(
                 tqdm(images_paths[start_frame:end_frame], unit="img")
@@ -102,14 +100,11 @@ class Track:
                         image_path=img_path
                     )
                 assignations = tracker.re_assign()
-                instances = utils.re_assign_dict(instances, assignations)
+                # instances = utils.re_assign_dict(instances, assignations)
 
-                # TODO: Call tasks
+                final_assignations[img_i+start_frame] = assignations
 
         except KeyboardInterrupt:
             pass
 
-    # TODO:
-    # task_results = {t: t.end() for t in tasks}
-    # image_saver.close()
-    # return task_results
+        return final_assignations
