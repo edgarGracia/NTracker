@@ -5,7 +5,7 @@ import numpy as np
 import seaborn as sns
 from omegaconf import DictConfig
 
-from NTracker.utils.structures import Instance
+from NTracker.utils.structures import Instance, box_center
 from NTracker.visualization import RelativePosition
 
 CV2_FONT = cv2.FONT_HERSHEY_SIMPLEX
@@ -60,7 +60,7 @@ def get_text_position_from_box(
     elif relative_position is RelativePosition.BOTTOM_RIGHT:
         return (xmax, ymax)
     elif relative_position is RelativePosition.CENTER:
-        return ((xmax-xmin)//2, (ymax-ymin)//2)
+        return ((xmax+xmin)//2, (ymax+ymin)//2)
     else:
         raise NotImplementedError(str(relative_position))
 
@@ -72,6 +72,8 @@ def draw_text(
     color: Tuple[int, int, int] = (255, 255, 255),
     scale: int = 1,
     thickness: int = 1,
+    border: int = 0,
+    border_color: Tuple[int, int, int] = (0,0,0),
     line_space: int = 15,
     relative_position: Union[RelativePosition,
                              str] = RelativePosition.TOP_RIGHT,
@@ -91,6 +93,9 @@ def draw_text(
             Defaults to (255, 255, 255).
         scale (int, optional): The scale of the text. Defaults to 1.
         thickness (int, optional): The text thickness_. Defaults to 1.
+        border (int, optional): Text border. Defaults to 0.
+        border_color (Tuple[int, int], optional): Border color. Defaults to
+            (0,0,0).
         line_space (int, optional): Line spacing. Defaults to 15.
         relative_position (Union[RelativePosition, str], optional): Relative
             position of the text to the provided position. Defaults to
@@ -134,6 +139,9 @@ def draw_text(
     elif relative_position is RelativePosition.BOTTOM_LEFT:
         x -= text_w + (margin*2)
         y += box_h
+    elif relative_position is RelativePosition.CENTER:
+        x -= (text_w//2) + margin
+        y += (box_h//2)
     else:
         raise NotImplementedError(str(relative_position))
 
@@ -166,13 +174,17 @@ def draw_text(
                 image,
                 (xmin, ymin),
                 (xmax, ymax),
-                background_alpha,
+                background_color,
                 -1
             )
 
     # Draw the text lines
     for i, line in enumerate(reversed(text_lines)):
         dy = i * (text_h + scale * line_space)
+        if border > 0:
+            cv2.putText(
+                image, line, (x + margin, y - margin - dy), CV2_FONT, scale,
+                border_color, thickness+border, cv2.LINE_AA)
         cv2.putText(
             image, line, (x + margin, y - margin - dy), CV2_FONT, scale, color,
             thickness, cv2.LINE_AA)
@@ -259,6 +271,75 @@ def instance_text_formatter(
     return eval(f"str({expression})")
 
 
+def draw_mask(
+    image: np.ndarray,
+    mask: np.ndarray,
+    color: Tuple[int, int, int] = (255, 255, 255),
+    alpha: float = 1,
+) -> np.ndarray:
+    """Draw a segmentation mask over an image.
+
+    Args:
+        image (np.ndarray): The source image where draw the mask.
+        mask (np.ndarray): Segmentation binary mask of shape (H, W).
+        color (Tuple[int, int, int], optional): Color of the mask.  
+            Defaults to (255, 255, 255).
+        alpha (float, optional): Opacity of the box. Defaults to 1.
+
+    Returns:
+        np.ndarray: The source image with the mask drawn.
+    """
+    if alpha <= 0:
+        return image
+    mask_pixels = image[mask==True]
+    color_mask = np.full_like(mask_pixels, color)
+    image[mask==True] = cv2.addWeighted(mask_pixels, 1-alpha, color_mask, alpha, 0)
+    return image
+
+
+def draw_position(
+    image: np.ndarray,
+    position: Tuple[int, int],
+    size: int,
+    color: Tuple[int, int, int] = (255, 255, 255),
+    border: int = 0,
+    border_color: Tuple[int, int, int] = (0, 0, 0),
+) -> np.ndarray:
+    """Draw a point in an image.
+
+    Args:
+        image (np.ndarray): The source image where draw the position.
+        position (Tuple[int, int]): (x, y) image position.
+        size (int): Marker size.
+        color (Tuple[int, int, int], optional): Color of the point.
+            Defaults to (255, 255, 255).
+        border (int, optional): Border size. Defaults to 0.
+        border_color (Tuple[int, int, int], optional): Border color.
+            Defaults to (0, 0, 0).
+
+    Returns:
+        np.ndarray: The source image with the position drawn.
+    """
+    if border > 0:
+        image = cv2.circle(
+                image,
+                position,
+                size+border,
+                border_color,
+                -1,
+                1
+            )
+    image = cv2.circle(
+        image,
+        position,
+        size,
+        color,
+        -1,
+        1
+    )
+    return image
+
+
 def draw_instance(
     cfg: DictConfig,
     image: np.ndarray,
@@ -282,6 +363,22 @@ def draw_instance(
     for instance_key, instance in instances.items():
         box = instance.bounding_box
 
+        # Draw mask
+        if cfg.visualization.mask.visible:
+            if cfg.visualization.mask.color_by_id:
+                mask_color = get_color(
+                    instance_id=instance_key,
+                    palette=cfg.visualization.mask.palette,
+                )
+            else:
+                mask_color = cfg.visualization.mask.color
+            draw_mask(
+                image=image,
+                mask=instance.mask,
+                color=mask_color,
+                alpha=cfg.visualization.mask.alpha
+            )
+
         # Draw bounding box
         if cfg.visualization.box.visible:
             if cfg.visualization.box.color_by_id:
@@ -298,6 +395,24 @@ def draw_instance(
                 alpha=cfg.visualization.box.alpha,
                 thickness=cfg.visualization.box.thickness,
                 fill=cfg.visualization.box.fill
+            )
+
+        # Draw the position
+        if cfg.visualization.position.visible:
+            if cfg.visualization.position.color_by_id:
+                position_color = get_color(
+                    instance_id=instance_key,
+                    palette=cfg.visualization.position.palette,
+                )
+            else:
+                position_color = cfg.visualization.position.color
+            image = draw_position(
+                image=image,
+                position=box_center(instance.bounding_box),
+                size=cfg.visualization.position.size,
+                color=position_color,
+                border=cfg.visualization.position.border,
+                border_color=cfg.visualization.position.border_color
             )
 
         # Draw text along the box
@@ -332,6 +447,8 @@ def draw_instance(
                 color=text_color,
                 scale=cfg.visualization.text.scale,
                 thickness=cfg.visualization.text.thickness,
+                border=cfg.visualization.text.border,
+                border_color=cfg.visualization.text.border_color,
                 line_space=cfg.visualization.text.line_space,
                 relative_position=cfg.visualization.text.position,
                 background=cfg.visualization.text_bg.visible,

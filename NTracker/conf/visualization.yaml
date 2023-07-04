@@ -6,34 +6,46 @@ img_bg_color: [0, 0, 0]
 text:
   visible: True
   color_by_id: False
-  scale:  1
-  thickness:  1
-  color: [255, 255, 255]
+  scale:  2
+  thickness:  2
+  color: [50,50,255]
   palette: null       # Seaborn color palette or list of colors
   line_space: 15
-  position: BOTTOM_RIGHT # RelativePosition Enum
+  position: TOP_RIGHT # RelativePosition Enum
+  border: 3
+  border_color: [0,0,0]
   formatter: f"{instance_key}"    # WARNING: This expression will be executed with an ``eval``
 
 text_bg:
-  visible: True
+  visible: False
   color_by_id: True
   color: [224, 56, 84]
-  alpha: 0.75
+  alpha: 1
   palette: null       # Seaborn color palette or list of colors
   margin: 5
 
-box:
+position:
   visible: True
+  size: 5
+  color_by_id: False
+  palette: null       # Seaborn color palette or list of colors
+  color: [255,255,255]
+  border: 2
+  border_color: [0,0,0]
+
+box:
+  visible: False
   color_by_id: True
-  thickness:  1
+  thickness:  2
   color: [224, 56, 84]
   alpha: 1
   palette: null            # Seaborn color palette or list of colors
-  text_position: TOP_LEFT  # RelativePosition Enum
+  text_position: CENTER  # RelativePosition Enum
   fill: False
 
 mask:
   visible: True
-  alpha: 0.75
+  color_by_id: True
+  alpha: 0.8
   color: [21, 57, 255]
   palette: null       # Seaborn color palette or list of colors

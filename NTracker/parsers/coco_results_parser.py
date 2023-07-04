@@ -45,7 +45,7 @@ class CocoResultsParser:
                 box = None
 
             if "segmentation" in annot:
-                mask = Mask.decode(annot["segmentation"])
+                mask = Mask.decode(annot["segmentation"]).astype("bool")
             else:
                 mask = None
 
