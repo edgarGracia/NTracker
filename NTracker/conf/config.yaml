@@ -46,5 +46,5 @@ features_tracker:
   features_threshold: null
   distance_function: euclidean    # "cosine" or "euclidean". (See ``scipy.spatial.distance.cdist``)
 
-assignations_path: null
-track: True   # Perform the tracking. If False it will load the assignations from the ``assignations_path`` file.
+tracking_file: null    # Path to the tracking data file to load
+track: True   # Perform the tracking. If False it will load the tracing data from the ``tracking_file``

@@ -52,10 +52,10 @@ mask:
 
 path:
   visible: True
-  color_by_id: True
+  color_by_id: False
   alpha: 1
   time_alpha: True
-  length: 5
+  length: 50
   color: [255, 255, 255]
   palette: null       # Seaborn color palette or list of colors
   thickness: 2

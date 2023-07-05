@@ -1,10 +1,10 @@
 import logging
 from pathlib import Path
 from typing import Dict, Optional, Union
+import numpy as np
 
 from omegaconf import DictConfig
 
-from NTracker.utils.assignations_utils import re_assign_dict
 from NTracker.utils.image_utils import write_image
 from NTracker.utils.path_utils import get_run_path
 from NTracker.utils.tracking_utils import iterate_dataset
@@ -38,20 +38,31 @@ class InstanceVisualizer:
             else Path(output_path).joinpath(output_dir))
         self.output_path.mkdir(exist_ok=True, parents=True)
 
-    def run(self, frame_assignations: Dict[int, Dict[int, int]]):
+    def run(self, tracking_data: Dict[int, Dict[int, Dict[str, int]]]):
         """Run the instance visualizer task.
 
         Args:
-            frame_assignations (Dict[int, Dict[int, int]]): Assignations dict
-                for each frame (original_key: tracked_key).
+            tracking_data (Dict[int, Dict[int, Dict[str, int]]]): Tracking data:
+                ({tracked_id: {frame_n: {original_id: , x: ..., y: ...}}})
         """
         logger.info(f"Saving images on: {self.output_path}")
+
         for img_i, instances, img, img_path in iterate_dataset(self.cfg):
-            if img_i not in frame_assignations:
-                logger.warning(f"Frame {img_i} not tracked")
-                continue
-            instances = re_assign_dict(instances, frame_assignations[img_i])
-            out_img = draw.draw_instance(self.cfg, img, instances)
+            if not self.cfg.visualization.img_background:
+                img = np.full_like(img, self.cfg.visualization.img_bg_color)
+            
+            for tracked_id, frames_dict in tracking_data.items():
+                if img_i not in frames_dict:
+                    logger.warning(f"Frame {img_i} not tracked")
+                    continue
+                out_img = draw.draw_instance(
+                    cfg=self.cfg,
+                    image=img,
+                    image_i=img_i,
+                    instance_key=tracked_id,
+                    instance=instances[frames_dict[img_i]["original_id"]],
+                    positions=frames_dict,
+                )
             out_path = self.output_path / img_path.name
             assert out_path != img_path
             write_image(out_path, out_img)

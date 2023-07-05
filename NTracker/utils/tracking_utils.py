@@ -1,3 +1,4 @@
+import json
 import logging
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Tuple, Union
@@ -9,6 +10,7 @@ from scipy.spatial import distance
 from tqdm import tqdm
 
 from NTracker.utils import image_utils, path_utils
+from NTracker.utils.path_utils import get_run_path
 from NTracker.utils.structures import Instance
 
 logger = logging.getLogger(__name__)
@@ -97,3 +99,37 @@ def iterate_dataset(
         instances = annotations_parser.read(ann_path)
         instances = {i: x for i, x in enumerate(instances)}
         yield ann_i+start_frame, instances, image, image_path[0]
+
+
+def load_track(
+    file_path: Union[Path, str]
+) -> Dict[int, Dict[int, Dict[str, int]]]:
+    """Load the tracking data from a file.
+
+    Args:
+        file_path (Union[Path, str]): Path to the tracking data JSON file.
+
+    Returns:
+        Dict[int, Dict[int, Dict[str, int]]]: Tracking data:
+            {tracked_id: {frame_n: {original_id: ..., x: ..., y: ...}}}
+    """
+    logger.info(f"Loading tracking data from: {file_path}")
+    return json.loads(Path(file_path).read_text())
+
+
+def save_track(
+    tracking_data: Dict[int, Dict[int, Dict[str, int]]],
+    output_file: Optional[Union[Path, str]] = None
+):
+    """Save the tracking data to a JSON file.
+
+    Args:
+        tracking_data (Dict[int, Dict[int, Dict[str, int]]]): Tracking data:
+            {tracked_id: {frame_n: {original_id: ..., x: ..., y: ...}}}
+        output_file (Optional[Union[Path, str]], optional): Output file path.
+            If None it will be set to a file in the run path. Defaults to None.
+    """
+    if output_file is None:
+        output_file = get_run_path("track.json")
+    logger.info(f"Saving tracking data to: {output_file}")
+    Path(output_file).write_text(json.dumps(tracking_data))

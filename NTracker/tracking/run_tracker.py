@@ -10,22 +10,15 @@ from NTracker.utils import structures
 logger = logging.getLogger(__name__)
 
 
-def run_tracker(cfg: DictConfig) -> Tuple(
-    Dict[int, Dict[int, int]],
-    Dict[int, Dict[int, Tuple[int, int]]]
-):
+def run_tracker(cfg: DictConfig) -> Dict[int, Dict[int, Dict[str, int]]]:
     """Perform the tracking of instances.
 
     Args:
             cfg (DictConfig): A configuration object.
 
     Returns:
-        Tuple(
-            Dict[int, Dict[int, int]],
-            Dict[int, Dict[int, Tuple[int, int]]]
-        ): Assignations dict for each frame (original_key: tracked_key) and
-            the tracked instances positions in each frame
-            (tracked_key: {frame: (x, y)}).
+        Dict[int, Dict[int, Dict[str, int]]]: Tracking data:
+            {tracked_id: {frame_n: {original_id: ..., x: ..., y: ...}}}
     """
     logger.info(f"Tracking annotations on: {cfg.annotations_path}")
 
@@ -36,9 +29,8 @@ def run_tracker(cfg: DictConfig) -> Tuple(
 
     # Tracker object
     tracker = Tracker(cfg)
-
-    frame_assignations: Dict[int, Dict[int, int]] = {}
-    instances_positions: Dict[int, Dict[int, Tuple[int, int]]] = {}
+    
+    tracking_data: Dict[int, Dict[int, Dict[str, int]]] = {}
     try:
         for img_i, instances, image, image_path in \
                 tracking_utils.iterate_dataset(cfg, cfg.tracker.load_images):
@@ -74,18 +66,17 @@ def run_tracker(cfg: DictConfig) -> Tuple(
                     image=image,
                     image_path=image_path
                 )
-            assignations = tracker.re_assign()
-            frame_assignations[img_i] = assignations
-
-            # Save positions
+            assignations = tracker.re_assign() # (original_key: tracked_key)
+            
             for orig_k, track_k in assignations.items():
-                pos = structures.box_center(instances[orig_k].bounding_box)
-                if track_k not in instances_positions:
-                    instances_positions[track_k] = {img_i: pos}
-                else:
-                    instances_positions[track_k][img_i] = pos
-
+                x, y = structures.box_center(instances[orig_k].bounding_box)
+                tracking_data.setdefault(track_k, {})[img_i] = {
+                    "original_id": orig_k,
+                    "x":x,
+                    "y":y
+                }
+                
     except KeyboardInterrupt:
         pass
 
-    return frame_assignations, instances_positions
+    return tracking_data

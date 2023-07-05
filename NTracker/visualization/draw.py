@@ -343,8 +343,8 @@ def draw_position(
 
 def draw_path(
     image: np.ndarray,
-    positions: Dict[int, Tuple[int, int]],
-    current_id: int,
+    image_i: int,
+    positions: Dict[int, Dict[str, int]],
     color: Tuple[int, int, int] = (255, 255, 255),
     thickness: int = 1,
     alpha: float = 1,
@@ -355,9 +355,9 @@ def draw_path(
 
     Args:
         image (np.ndarray): The source image where draw the position.
+        image_i (int): Image counter.
         positions (Dict[int, Tuple[int, int]]): Dict with the instance
             positions (image_id: (x, y)).
-        current_id (int): Current image ID.
         color (Tuple[int, int, int], optional): Color of the path.
             Defaults to (255, 255, 255).
         thickness (int, optional): Line thickness. Defaults to 1.
@@ -371,173 +371,178 @@ def draw_path(
         np.ndarray: The source image with the paths drawn.
     """
     curr_pos, prev_pos = None, None
-    length = current_id if length is None else length
+    length = image_i if length is None else length
 
-    for i in range(current_id, max(current_id-length, 0), -1):
+    for i in range(image_i, max(image_i-length, 0), -1):
         # Current position
         if i not in positions:
             continue
-        curr_pos = positions[i]
+        curr_pos = (positions[i]["x"], positions[i]["y"])
         # Previous position
-        for j in range(i, 0, -1):
+        for j in range(i-1, 0, -1):
             if j in positions:
-                prev_pos = positions[j]
+                prev_pos = (positions[j]["x"], positions[j]["y"])
                 break
         if prev_pos is None:
             break
         # Compute alpha
         if time_alpha:
-            final_alpha = 1-min((current_id-i)/length, 1)
+            final_alpha = 1-min((image_i-i)/length, 1)
         else:
             final_alpha = alpha
-        if final_alpha >= 0:
+        if final_alpha <= 0:
             break
         # Draw path
         if final_alpha >= 1:
             image = cv2.line(image, curr_pos, prev_pos, color, thickness, 1)
         else:
-            path_img = np.zeros_like(image)
-            path_img = cv2.line(path_img, curr_pos,
-                                prev_pos, color, thickness, 1)
-            image = cv2.addWeighted(
-                image, 1-final_alpha, path_img, final_alpha, 0)
+            path_mask = np.zeros(
+                (image.shape[0], image.shape[1]), dtype="uint8")
+            path_mask = cv2.line(path_mask, curr_pos,
+                                 prev_pos, 1, thickness, 1)
+            color_mask = np.full_like(image, color)
+            image[path_mask == 1] = cv2.addWeighted(
+                image[path_mask == 1], 1-final_alpha,
+                color_mask[path_mask == 1], final_alpha, 0)
     return image
 
 
 def draw_instance(
     cfg: DictConfig,
     image: np.ndarray,
-    instances: Dict[int, Instance]
+    image_i: int,
+    instance_key: int,
+    instance: Instance,
+    positions: Dict[int, Dict[str, int]],
 ) -> np.ndarray:
     """Draw an instance object over an image.
 
     Args:
         cfg (DictConfig): A configuration object.
         image (np.ndarray): Numpy image of shape (H, W, 3) and "uint8" dtype.
-        instances (Dict[int, Instance]): Dict of instances.
+        image_i (int): Image counter.
+        instance_key (int): Tracked key of the instance.
+        instance (Instance): Instance object to draw.
+        positions (Dict[int, Dict[str, int]]): Dict with the instance positions
+            ({image_i: {'x': ..., 'y': ...}})
 
     Returns:
-        np.ndarray: The image with the instance's data data drawn.
+        np.ndarray: The image with the instance's data drawn.
     """
-    if cfg.visualization.img_background:
-        image = image.copy()
-    else:
-        image = np.full_like(image, cfg.visualization.img_bg_color)
+    box = instance.bounding_box
 
-    for instance_key, instance in instances.items():
-        box = instance.bounding_box
+    # Draw mask
+    if cfg.visualization.mask.visible:
+        if cfg.visualization.mask.color_by_id:
+            mask_color = get_color(
+                instance_id=instance_key,
+                palette=cfg.visualization.mask.palette,
+            )
+        else:
+            mask_color = cfg.visualization.mask.color
+        draw_mask(
+            image=image,
+            mask=instance.mask,
+            color=mask_color,
+            alpha=cfg.visualization.mask.alpha
+        )
 
-        # Draw mask
-        if cfg.visualization.mask.visible:
-            if cfg.visualization.mask.color_by_id:
-                mask_color = get_color(
-                    instance_id=instance_key,
-                    palette=cfg.visualization.mask.palette,
-                )
-            else:
-                mask_color = cfg.visualization.mask.color
-            draw_mask(
-                image=image,
-                mask=instance.mask,
-                color=mask_color,
-                alpha=cfg.visualization.mask.alpha
+    # Draw bounding box
+    if cfg.visualization.box.visible:
+        if cfg.visualization.box.color_by_id:
+            box_color = get_color(
+                instance_id=instance_key,
+                palette=cfg.visualization.box.palette,
             )
+        else:
+            box_color = cfg.visualization.box.color
+        draw_bounding_box(
+            image=image,
+            box=box,
+            color=box_color,
+            alpha=cfg.visualization.box.alpha,
+            thickness=cfg.visualization.box.thickness,
+            fill=cfg.visualization.box.fill
+        )
 
-        # Draw bounding box
-        if cfg.visualization.box.visible:
-            if cfg.visualization.box.color_by_id:
-                box_color = get_color(
-                    instance_id=instance_key,
-                    palette=cfg.visualization.box.palette,
-                )
-            else:
-                box_color = cfg.visualization.box.color
-            draw_bounding_box(
-                image=image,
-                box=box,
-                color=box_color,
-                alpha=cfg.visualization.box.alpha,
-                thickness=cfg.visualization.box.thickness,
-                fill=cfg.visualization.box.fill
+    # Draw path
+    if cfg.visualization.path.visible:
+        if cfg.visualization.path.color_by_id:
+            path_color = get_color(
+                instance_id=instance_key,
+                palette=cfg.visualization.path.palette,
             )
+        else:
+            path_color = cfg.visualization.path.color
+        image = draw_path(
+            image=image,
+            image_i=image_i,
+            positions=positions,
+            color=path_color,
+            thickness=cfg.visualization.path.thickness,
+            alpha=cfg.visualization.path.alpha,
+            time_alpha=cfg.visualization.path.time_alpha,
+            length=cfg.visualization.path.length
+        )
 
-        # Draw path
-        if cfg.visualization.path.visible:
-            if cfg.visualization.path.color_by_id:
-                path_color = get_color(
-                    instance_id=instance_key,
-                    palette=cfg.visualization.path.palette,
-                )
-            else:
-                path_color = cfg.visualization.path.color
-            image = draw_path(
-                image=image,
-                positions=,
-                current_id=instance_key,
-                color=path_color,
-                thickness=cfg.visualization.path.thickness,
-                alpha=cfg.visualization.path.alpha,
-                time_alpha=cfg.visualization.path.time_alpha,
-                length=cfg.visualization.path.length
+    # Draw the position
+    if cfg.visualization.position.visible:
+        if cfg.visualization.position.color_by_id:
+            position_color = get_color(
+                instance_id=instance_key,
+                palette=cfg.visualization.position.palette,
             )
-        
-        # Draw the position
-        if cfg.visualization.position.visible:
-            if cfg.visualization.position.color_by_id:
-                position_color = get_color(
-                    instance_id=instance_key,
-                    palette=cfg.visualization.position.palette,
-                )
-            else:
-                position_color = cfg.visualization.position.color
-            image = draw_position(
-                image=image,
-                position=box_center(instance.bounding_box),
-                size=cfg.visualization.position.size,
-                color=position_color,
-                border=cfg.visualization.position.border,
-                border_color=cfg.visualization.position.border_color
-            )
+        else:
+            position_color = cfg.visualization.position.color
+        image = draw_position(
+            image=image,
+            position=box_center(instance.bounding_box),
+            size=cfg.visualization.position.size,
+            color=position_color,
+            border=cfg.visualization.position.border,
+            border_color=cfg.visualization.position.border_color
+        )
 
-        # Draw text along the box
-        if cfg.visualization.text.visible and cfg.visualization.text.formatter:
-            text = instance_text_formatter(
-                instance_key,
-                instance,
-                cfg.visualization.text.formatter
+    # Draw text along the box
+    if cfg.visualization.text.visible and cfg.visualization.text.formatter:
+        text = instance_text_formatter(
+            instance_key,
+            instance,
+            cfg.visualization.text.formatter
+        )
+        position = get_text_position_from_box(
+            box=box,
+            relative_position=cfg.visualization.box.text_position
+        )
+        if cfg.visualization.text.color_by_id:
+            text_color = get_color(
+                instance_id=instance_key,
+                palette=cfg.visualization.text.palette
             )
-            position = get_text_position_from_box(
-                box=box,
-                relative_position=cfg.visualization.box.text_position
+        else:
+            text_color = cfg.visualization.text.color
+        if cfg.visualization.text_bg.color_by_id:
+            text_bg_color = get_color(
+                instance_id=instance_key,
+                palette=cfg.visualization.text_bg.palette,
             )
-            if cfg.visualization.text.color_by_id:
-                text_color = get_color(
-                    instance_id=instance_key,
-                    palette=cfg.visualization.text.palette
-                )
-            else:
-                text_color = cfg.visualization.text.color
-            if cfg.visualization.text_bg.color_by_id:
-                text_bg_color = get_color(
-                    instance_id=instance_key,
-                    palette=cfg.visualization.text_bg.palette,
-                )
-            else:
-                text_bg_color = cfg.visualization.text_bg.color
-            draw_text(
-                image=image,
-                text=text,
-                position=position,
-                color=text_color,
-                scale=cfg.visualization.text.scale,
-                thickness=cfg.visualization.text.thickness,
-                border=cfg.visualization.text.border,
-                border_color=cfg.visualization.text.border_color,
-                line_space=cfg.visualization.text.line_space,
-                relative_position=cfg.visualization.text.position,
-                background=cfg.visualization.text_bg.visible,
-                background_color=text_bg_color,
-                background_alpha=cfg.visualization.text_bg.alpha,
-                margin=cfg.visualization.text_bg.margin
-            )
+        else:
+            text_bg_color = cfg.visualization.text_bg.color
+        draw_text(
+            image=image,
+            text=text,
+            position=position,
+            color=text_color,
+            scale=cfg.visualization.text.scale,
+            thickness=cfg.visualization.text.thickness,
+            border=cfg.visualization.text.border,
+            border_color=cfg.visualization.text.border_color,
+            line_space=cfg.visualization.text.line_space,
+            relative_position=cfg.visualization.text.position,
+            background=cfg.visualization.text_bg.visible,
+            background_color=text_bg_color,
+            background_alpha=cfg.visualization.text_bg.alpha,
+            margin=cfg.visualization.text_bg.margin
+        )
+
     return image

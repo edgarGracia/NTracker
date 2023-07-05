@@ -34,10 +34,9 @@ features_tracker:
   features_threshold: null
   distance_function: euclidean    # "cosine" or "euclidean". (See ``scipy.spatial.distance.cdist``)
 
-assignations_path: null
+tracking_file: null    # Path to the tracking data file to load
 track: True
 
 tasks:
-  - _target_: NTracker.tasks.SavePositions
   - _target_: NTracker.tasks.InstanceVisualizer
   
