@@ -341,6 +341,69 @@ def draw_position(
     return image
 
 
+def draw_path(
+    image: np.ndarray,
+    positions: Dict[int, Tuple[int, int]],
+    current_id: int,
+    color: Tuple[int, int, int] = (255, 255, 255),
+    thickness: int = 1,
+    alpha: float = 1,
+    time_alpha: bool = False,
+    length: Optional[int] = 30
+) -> np.ndarray:
+    """Draw the path of an instance over an image.
+
+    Args:
+        image (np.ndarray): The source image where draw the position.
+        positions (Dict[int, Tuple[int, int]]): Dict with the instance
+            positions (image_id: (x, y)).
+        current_id (int): Current image ID.
+        color (Tuple[int, int, int], optional): Color of the path.
+            Defaults to (255, 255, 255).
+        thickness (int, optional): Line thickness. Defaults to 1.
+        alpha (float, optional): Line opacity. Defaults to 1.
+        time_alpha (bool, optional): Vanish the paths over time.
+            Defaults to False.
+        length (Optional[int], optional): Number of previous paths to show.
+            If None, all. Defaults to 30.
+
+    Returns:
+        np.ndarray: The source image with the paths drawn.
+    """
+    curr_pos, prev_pos = None, None
+    length = current_id if length is None else length
+
+    for i in range(current_id, max(current_id-length, 0), -1):
+        # Current position
+        if i not in positions:
+            continue
+        curr_pos = positions[i]
+        # Previous position
+        for j in range(i, 0, -1):
+            if j in positions:
+                prev_pos = positions[j]
+                break
+        if prev_pos is None:
+            break
+        # Compute alpha
+        if time_alpha:
+            final_alpha = 1-min((current_id-i)/length, 1)
+        else:
+            final_alpha = alpha
+        if final_alpha >= 0:
+            break
+        # Draw path
+        if final_alpha >= 1:
+            image = cv2.line(image, curr_pos, prev_pos, color, thickness, 1)
+        else:
+            path_img = np.zeros_like(image)
+            path_img = cv2.line(path_img, curr_pos,
+                                prev_pos, color, thickness, 1)
+            image = cv2.addWeighted(
+                image, 1-final_alpha, path_img, final_alpha, 0)
+    return image
+
+
 def draw_instance(
     cfg: DictConfig,
     image: np.ndarray,
@@ -398,6 +461,26 @@ def draw_instance(
                 fill=cfg.visualization.box.fill
             )
 
+        # Draw path
+        if cfg.visualization.path.visible:
+            if cfg.visualization.path.color_by_id:
+                path_color = get_color(
+                    instance_id=instance_key,
+                    palette=cfg.visualization.path.palette,
+                )
+            else:
+                path_color = cfg.visualization.path.color
+            image = draw_path(
+                image=image,
+                positions=,
+                current_id=instance_key,
+                color=path_color,
+                thickness=cfg.visualization.path.thickness,
+                alpha=cfg.visualization.path.alpha,
+                time_alpha=cfg.visualization.path.time_alpha,
+                length=cfg.visualization.path.length
+            )
+        
         # Draw the position
         if cfg.visualization.position.visible:
             if cfg.visualization.position.color_by_id:

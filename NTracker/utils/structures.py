@@ -5,6 +5,8 @@ import numpy as np
 
 
 class Instance:
+    """Structure to hold the data of a detection instance to track.
+    """
 
     def __init__(
         self,
@@ -16,6 +18,25 @@ class Instance:
         label_id: Optional[int] = None,
         image_id: Optional[str] = None
     ):
+        """Create and instance object.
+
+        Args:
+            bounding_box (Optional[Tuple[int, int, int, int]], optional):
+                Bounding box delimiting the object within the image, in the
+                format: (xmin, ymin, xmax, ymax). Defaults to None.
+            score (Optional[float], optional): Detection score in the range
+                [0, 1]. Defaults to None.
+            id (Optional[int], optional): Original identifier of the instance.
+                Defaults to None.
+            mask (Optional[np.ndarray], optional): Numpy binary mask delimiting
+                the object within the image, of type bool and shape (H, W).
+                Defaults to None.
+            label (Optional[str], optional): Detected label. Defaults to None.
+            label_id (Optional[int], optional): Identifier of the label.
+                Defaults to None.
+            image_id (Optional[str], optional): Identifier of the image.
+                Defaults to None.
+        """
         self.bounding_box = bounding_box
         self.score = score
         self.id = id
@@ -25,6 +46,8 @@ class Instance:
         self.image_id = image_id
 
     def dict(self) -> dict:
+        """Return the instance's fields as a dict
+        """
         return deepcopy(
             {k: v for k, v in self.__dict__.items()
              if not k.startswith("_") and k != "dict"}
