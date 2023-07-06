@@ -369,7 +369,12 @@ def draw_path(
     """
     curr_pos, prev_pos = None, None
     length = image_i if length is None else length
-    np_color = np.array(color)
+
+    if alpha < 1 or time_alpha:
+        np_color = np.array(color)
+        alpha_mask = np.zeros((image.shape[0], image.shape[1]), dtype="uint8")
+    else:
+        alpha_mask = None
 
     for i in range(image_i, max(image_i-length, 0), -1):
         # Current position
@@ -394,12 +399,20 @@ def draw_path(
         if final_alpha >= 1:
             image = cv2.line(image, curr_pos, prev_pos, color, thickness, 1)
         else:
-            path_mask = np.zeros(
-                (image.shape[0], image.shape[1]), dtype="uint8")
-            path_mask = cv2.line(path_mask, curr_pos,
-                                 prev_pos, 1, thickness, 1).astype("bool")
-            image[path_mask] = image[path_mask] * \
-                (1-final_alpha) + final_alpha * np_color
+            alpha_mask = cv2.line(
+                alpha_mask,
+                curr_pos,
+                prev_pos,
+                int(final_alpha*255),
+                thickness,
+                1
+            )
+
+    if alpha_mask is not None:
+        m = alpha_mask > 0
+        alpha_mask = alpha_mask.astype(np.float16)/255
+        alpha_mask = np.expand_dims(alpha_mask, -1)
+        image[m] = image[m] * (1-alpha_mask[m]) + np_color * alpha_mask[m]
 
     return image
 

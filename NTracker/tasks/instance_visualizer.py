@@ -53,7 +53,6 @@ class InstanceVisualizer:
             
             for tracked_id, frames_dict in tracking_data.items():
                 if img_i not in frames_dict:
-                    logger.warning(f"Frame {img_i} not tracked")
                     continue
                 out_img = draw.draw_instance(
                     cfg=self.cfg,
