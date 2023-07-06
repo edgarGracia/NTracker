@@ -291,10 +291,7 @@ def draw_mask(
     """
     if alpha <= 0:
         return image
-    mask_pixels = image[mask == True]
-    color_mask = np.full_like(mask_pixels, color)
-    image[mask == True] = cv2.addWeighted(
-        mask_pixels, 1-alpha, color_mask, alpha, 0)
+    image[mask] = image[mask] * (1-alpha) + alpha * np.array(color)
     return image
 
 
@@ -372,6 +369,7 @@ def draw_path(
     """
     curr_pos, prev_pos = None, None
     length = image_i if length is None else length
+    np_color = np.array(color)
 
     for i in range(image_i, max(image_i-length, 0), -1):
         # Current position
@@ -399,11 +397,10 @@ def draw_path(
             path_mask = np.zeros(
                 (image.shape[0], image.shape[1]), dtype="uint8")
             path_mask = cv2.line(path_mask, curr_pos,
-                                 prev_pos, 1, thickness, 1)
-            color_mask = np.full_like(image, color)
-            image[path_mask == 1] = cv2.addWeighted(
-                image[path_mask == 1], 1-final_alpha,
-                color_mask[path_mask == 1], final_alpha, 0)
+                                 prev_pos, 1, thickness, 1).astype("bool")
+            image[path_mask] = image[path_mask] * \
+                (1-final_alpha) + final_alpha * np_color
+
     return image
 
 

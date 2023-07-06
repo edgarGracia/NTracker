@@ -5,8 +5,8 @@ from hydra.utils import instantiate
 from omegaconf import DictConfig
 
 from NTracker.tracking.run_tracker import run_tracker
-from NTracker.utils.tracking_utils import save_track, load_track
 from NTracker.utils.path_utils import get_run_path
+from NTracker.utils.tracking_utils import load_track, save_track
 
 logger = logging.getLogger(__name__)
 
