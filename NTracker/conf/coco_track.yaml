@@ -1,6 +1,6 @@
 defaults:
-  - _self_
   - config
+  - _self_
 
 start_frame: null
 end_frame: null
@@ -21,9 +21,9 @@ tracker:
   filter_score: False        # Only take the ``num_instances`` instances with the highest score
   load_images: True
   remove_background: True
-  pos_weight:      0.33
-  features_weight: 0.33
-  iou_weight:      0.33
+  pos_weight:      1.
+  features_weight: 0.
+  iou_weight:      0.
 
 position_tracker:
   position_threshold: null  # Maximum position displacement between frames
@@ -38,5 +38,8 @@ tracking_file: null    # Path to the tracking data file to load
 track: True
 
 tasks:
-  - _target_: NTracker.tasks.InstanceVisualizer
+  # - _target_: NTracker.tasks.InstanceVisualizer
+  - _target_: NTracker.tasks.InstanceVisualizerMultiProcess
+    rename_output: True
+    image_extension: .jpg
   

@@ -21,7 +21,10 @@ class InstanceVisualizer:
         self,
         cfg: DictConfig,
         output_dir: Union[Path, str] = "images",
-        output_path: Optional[Union[Path, str]] = None
+        output_path: Optional[Union[Path, str]] = None,
+        rename_output: bool = False,
+        image_extension: Optional[str] = None,
+        zero_fill: int = 10
     ):
         """Create an instance visualizer object.
 
@@ -31,12 +34,22 @@ class InstanceVisualizer:
                 save the images. Defaults to "images".
             output_path (Optional[Union[Path, str]], optional): Output parent
                 path. If None the run path will be used. Defaults to None.
+            rename_output (bool, optional): Rename the output images to a
+                numerical counter. Defaults to False.
+            image_extension (Optional[str], optional): Output image extension
+                (e.g. ".jpg"). If None it will use the same extension as the
+                input images. Defaults to None.
+            zero_fill (int, optional): Number of zeros to prepend to the image
+                file names. Defaults to 10.
         """
         self.cfg = cfg
         self.output_path = (
             get_run_path(output_dir) if output_path is None
             else Path(output_path).joinpath(output_dir))
         self.output_path.mkdir(exist_ok=True, parents=True)
+        self.rename_output = rename_output
+        self.image_extension = image_extension
+        self.zero_fill = zero_fill
 
     def run(self, tracking_data: Dict[int, Dict[int, Dict[str, int]]]):
         """Run the instance visualizer task.
@@ -62,6 +75,12 @@ class InstanceVisualizer:
                     instance=instances[frames_dict[img_i]["original_id"]],
                     positions=frames_dict,
                 )
-            out_path = self.output_path / img_path.name
+            ext = (img_path.suffix if self.image_extension is None
+                   else self.image_extension)
+            if self.rename_output:
+                out_path = self.output_path / (
+                    str(img_i).zfill(self.zero_fill) + ext)
+            else:
+                out_path = self.output_path / (img_path.stem + ext)
             assert out_path != img_path
             write_image(out_path, out_img)
