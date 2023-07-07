@@ -44,9 +44,11 @@ tasks:
     image_extension: .jpg
     overlay_path: C:\Users\HE7\Desktop\some_pigs\overlay_0.png
   # - _target_: NTracker.tasks.CreateVideoFfmpeg
-  # - _target_: NTracker.tasks.WalkDistance
-  # - _target_: NTracker.tasks.TimeOnArea
-  #   roi_path: C:\Users\HE7\Desktop\some_pigs\mask_0.png
-  #   frame_time: 0.04
-  #   intersect_source: mask
+  - _target_: NTracker.tasks.WalkDistance
+  - _target_: NTracker.tasks.TimeOnArea
+    roi_paths:
+      - C:\Users\HE7\Desktop\some_pigs\mask_0.png
+      - C:\Users\HE7\Desktop\some_pigs\bebedero.png
+    frame_time: 0.04
+    intersect_sources: mask
   

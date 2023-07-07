@@ -2,17 +2,17 @@ import json
 import logging
 from pathlib import Path
 from typing import Dict, Optional, Union, List
+from collections.abc import Sequence
 
 from omegaconf import DictConfig
-import cv2
+import numpy as np
 
 from NTracker.utils.path_utils import get_run_path
 from NTracker.utils.image_utils import read_image
 from NTracker.utils.tracking_utils import iterate_dataset
-from NTracker.utils.structures import mask_intersect
+from NTracker.utils.structures import Instance, mask_intersect, box_center
 
 logger = logging.getLogger(__name__)
-
 
 
 class TimeOnArea:
@@ -52,21 +52,43 @@ class TimeOnArea:
                             else get_run_path(output_path))
         self.output_path.mkdir(parents=True, exist_ok=True)
 
-
         self.roi_names = []
         self.rois = []
-        if not isinstance(roi_paths, (list, tuple)):
+        if not isinstance(roi_paths, Sequence):
             roi_paths = [roi_paths]
         for path in roi_paths:
+            path = Path(path)
             roi = read_image(path)
             roi = roi.sum(axis=-1) > 0
             self.rois.append(roi)
             self.roi_names.append(path.stem)
-        
+
         if isinstance(intersect_sources, str):
             self.intersect_sources = [intersect_sources] * len(self.rois)
         else:
             self.intersect_sources = intersect_sources
+
+    def _intersect_roi(
+        self,
+        roi: np.ndarray,
+        instance: Instance,
+        intersect_source: str
+    ) -> bool:
+        if intersect_source == "mask":
+            return mask_intersect(roi, instance.mask)
+        elif intersect_source == "box":
+            xmin, ymin, xmax, ymax = instance.bounding_box
+            box_mask = np.zeros_like(roi)
+            box_mask[ymin:ymax, xmin:xmax] = True
+            return mask_intersect(roi, box_mask)
+        elif intersect_source == "point":
+            box = instance.bounding_box
+            cx, cy = box_center(box)
+            pos_mask = np.zeros_like(roi)
+            pos_mask[cy,cx] = True
+            return mask_intersect(roi, pos_mask)
+        else:
+            raise NotImplementedError(intersect_source)
 
     def run(self, tracking_data: Dict[int, Dict[int, Dict[str, int]]]):
         """Run the instance visualizer task.
@@ -75,8 +97,8 @@ class TimeOnArea:
             tracking_data (Dict[int, Dict[int, Dict[str, int]]]): Tracking data:
                 ({tracked_id: {frame_n: {original_id: , x: ..., y: ...}}})
         """
-        roi_time = [
-            {ti: {"frames":0, "time":0} for ti in tracking_data.keys()}
+        rois_time = [
+            {ti: {"frames": 0, "time": 0} for ti in tracking_data.keys()}
             for _ in self.rois
         ]
 
@@ -85,13 +107,11 @@ class TimeOnArea:
                 if img_i not in frames_dict:
                     continue
                 instance = instances[frames_dict[img_i]["original_id"]]
-                if self.intersect_source == "mask":
-                    intersect = mask_intersect(self.roi, instance.mask)
-                else:
-                    raise NotImplementedError(self.intersect_source)
-                if intersect:
-                    roi_time[tracked_id]["frames"] += 1
-                    roi_time[tracked_id]["time"] += self.frame_time
-        
-        logger.info(f"Saving time on area to {self.output_file}")
-        self.output_file.write_text(json.dumps(roi_time))
+                for rt, roi, src in zip(rois_time, self.rois, self.intersect_sources):
+                    if self._intersect_roi(roi, instance, src):
+                        rt[tracked_id]["frames"] += 1
+                        rt[tracked_id]["time"] += self.frame_time
+
+        logger.info(f"Saving time on area to {self.output_path}")
+        for rt, name in zip(rois_time, self.roi_names):
+            self.output_path.joinpath(name+".json").write_text(json.dumps(rt))
