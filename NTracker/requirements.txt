@@ -1,0 +1,10 @@
+ffmpeg_python
+numpy
+hydra-core
+opencv_contrib_python
+opencv_python
+pycocotools
+scipy
+seaborn
+tqdm
+hydra_colorlog 
