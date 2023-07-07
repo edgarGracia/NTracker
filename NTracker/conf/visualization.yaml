@@ -59,3 +59,8 @@ path:
   color: [255, 255, 255]
   palette: null       # Seaborn color palette or list of colors
   thickness: 2
+
+overlay:
+  visible: True
+  alpha: 0.5
+  

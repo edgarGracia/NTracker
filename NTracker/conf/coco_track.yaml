@@ -42,5 +42,11 @@ tasks:
   - _target_: NTracker.tasks.InstanceVisualizerMultiProcess
     rename_output: True
     image_extension: .jpg
-  - _target_: NTracker.tasks.CreateVideoFfmpeg
+    overlay_path: C:\Users\HE7\Desktop\some_pigs\overlay_0.png
+  # - _target_: NTracker.tasks.CreateVideoFfmpeg
+  # - _target_: NTracker.tasks.WalkDistance
+  # - _target_: NTracker.tasks.TimeOnArea
+  #   roi_path: C:\Users\HE7\Desktop\some_pigs\mask_0.png
+  #   frame_time: 0.04
+  #   intersect_source: mask
   

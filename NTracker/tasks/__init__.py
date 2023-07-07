@@ -1,3 +1,5 @@
 from .instance_visualizer import InstanceVisualizer
 from .instance_visualizer_multi_process import InstanceVisualizerMultiProcess
 from .create_video_ffmpeg import CreateVideoFfmpeg
+from .walk_distance import WalkDistance
+from .time_on_area import TimeOnArea

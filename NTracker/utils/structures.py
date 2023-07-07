@@ -117,3 +117,17 @@ def box_center(box: Tuple[int, int, int, int]) -> Tuple[int, int]:
         round((box[0] + box[2])/2),
         round((box[1] + box[3])/2)
     )
+
+
+def mask_intersect(mask_a: np.ndarray, mask_b: np.ndarray) -> bool:
+    """Test if two binary masks intersect.
+
+    Args:
+        mask_a (np.ndarray): A segmentation mask of shape (h, w).
+        mask_b (np.ndarray): A segmentation mask of shape (h, w).
+
+    Returns:
+        bool: True if the masks intersect, False otherwise.
+    """
+    intersection = np.logical_and(mask_a, mask_b)
+    return np.any(intersection)

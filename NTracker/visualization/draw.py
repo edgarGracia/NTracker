@@ -417,6 +417,28 @@ def draw_path(
     return image
 
 
+def draw_overlay(
+    image: np.ndarray,
+    overlay: np.ndarray,
+    alpha: float
+) -> np.ndarray:
+    """Draw an overlay on top of an image.
+
+    Args:
+        image (np.ndarray): The source image where draw the overlay.
+        overlay (np.ndarray): The image to draw on top.
+        alpha (float): Image opacity.
+
+    Returns:
+        np.ndarray: The source image with the overlay on top.
+    """
+    if alpha >= 1:
+        return image
+    mask = overlay.sum(-1) > 0
+    image[mask] = cv2.addWeighted(image[mask], (1-alpha), overlay[mask], alpha, 0)
+    return image
+
+
 def draw_instance(
     cfg: DictConfig,
     image: np.ndarray,
@@ -555,4 +577,33 @@ def draw_instance(
             margin=cfg.visualization.text_bg.margin
         )
 
+    return image
+
+
+def draw_tracking_frame(
+    cfg: DictConfig,
+    image: np.ndarray,
+    frame_i: int,
+    tracking_data: Dict[int, Dict[int, Dict[str, int]]],
+    instances: Dict[int, Instance],
+    overlay: Optional[np.ndarray]
+):
+    if not cfg.visualization.img_background:
+        image = np.full_like(image, cfg.visualization.img_bg_color)
+
+    for tracked_id, frames_dict in tracking_data.items():
+        if frame_i not in frames_dict:
+            continue
+        image = draw_instance(
+            cfg=cfg,
+            image=image,
+            image_i=frame_i,
+            instance_key=tracked_id,
+            instance=instances[frames_dict[frame_i]["original_id"]],
+            positions=frames_dict
+        )
+    
+    if overlay is not None:
+        draw_overlay(image, overlay, cfg.visualization.overlay.alpha)
+    
     return image
