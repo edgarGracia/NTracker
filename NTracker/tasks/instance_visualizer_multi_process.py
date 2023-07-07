@@ -58,8 +58,8 @@ class InstanceVisualizerMultiProcess:
     def __init__(
         self,
         cfg: DictConfig,
-        output_dir: Union[Path, str] = "images",
         output_path: Optional[Union[Path, str]] = None,
+        folder_name: Union[Path, str] = "images",
         processes: Optional[int] = None,
         rename_output: bool = False,
         image_extension: Optional[str] = None,
@@ -69,10 +69,10 @@ class InstanceVisualizerMultiProcess:
 
         Args:
             cfg (DictConfig): A configuration object.
-            output_dir (Union[Path, str], optional): Output folder where
-                save the images. Defaults to "images".
             output_path (Optional[Union[Path, str]], optional): Output parent
                 path. If None the run path will be used. Defaults to None.
+            folder_name (Union[Path, str], optional): Folder where save the
+                images. Defaults to "images".
             processes (Optional[int], optional): Number of processes. If None
                 the number total number of logical processors will be used.
                 Defaults to None.
@@ -87,8 +87,8 @@ class InstanceVisualizerMultiProcess:
         self.cfg = cfg
         self.processes = processes
         self.output_path = (
-            get_run_path(output_dir) if output_path is None
-            else Path(output_path).joinpath(output_dir))
+            get_run_path(folder_name) if output_path is None
+            else Path(output_path).joinpath(folder_name))
         self.output_path.mkdir(exist_ok=True, parents=True)
         self.rename_output = rename_output
         self.image_extension = image_extension

@@ -19,7 +19,7 @@ tracker:
   filter_n_instances: False  # Only process frames with ``num_instances`` instances
   init_instances: null       # Number of instances required to start the tracking
   filter_score: False        # Only take the ``num_instances`` instances with the highest score
-  load_images: True
+  load_images: False
   remove_background: True
   pos_weight:      1.
   features_weight: 0.
@@ -42,4 +42,5 @@ tasks:
   - _target_: NTracker.tasks.InstanceVisualizerMultiProcess
     rename_output: True
     image_extension: .jpg
+  - _target_: NTracker.tasks.CreateVideoFfmpeg
   
