@@ -35,7 +35,7 @@ tracker:
   remove_background: True
   pos_weight:      0.33
   features_weight: 0.33
-  iou_weight:      0.33
+  mask_iou_weight: 0.33
 
 position_tracker:
   position_threshold: null  # Maximum position displacement between frames

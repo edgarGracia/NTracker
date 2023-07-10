@@ -23,8 +23,9 @@ def _process_image(data):
     instances = {i: x for i, x in enumerate(instances)}
 
     img = read_image(img_path)
-    draw.draw_tracking_frame(cfg, img, img_i, tracking_data, instances, overlay)
-    
+    draw.draw_tracking_frame(
+        cfg, img, img_i, tracking_data, instances, overlay)
+
     ext = img_path.suffix if image_extension is None else image_extension
     if rename_output:
         out_path = output_path / (str(img_i).zfill(zero_fill) + ext)

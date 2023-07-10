@@ -4,8 +4,7 @@ from typing import Dict, Tuple
 from omegaconf import DictConfig
 
 from NTracker.tracking.tracker import Tracker
-from NTracker.utils import tracking_utils
-from NTracker.utils import structures
+from NTracker.utils import structures, tracking_utils
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +28,7 @@ def run_tracker(cfg: DictConfig) -> Dict[int, Dict[int, Dict[str, int]]]:
 
     # Tracker object
     tracker = Tracker(cfg)
-    
+
     tracking_data: Dict[int, Dict[int, Dict[str, int]]] = {}
     try:
         for img_i, instances, image, image_path in \
@@ -66,16 +65,16 @@ def run_tracker(cfg: DictConfig) -> Dict[int, Dict[int, Dict[str, int]]]:
                     image=image,
                     image_path=image_path
                 )
-            assignations = tracker.re_assign() # (original_key: tracked_key)
-            
+            assignations = tracker.re_assign()  # (original_key: tracked_key)
+
             for orig_k, track_k in assignations.items():
                 x, y = structures.box_center(instances[orig_k].bounding_box)
                 tracking_data.setdefault(track_k, {})[img_i] = {
                     "original_id": orig_k,
-                    "x":x,
-                    "y":y
+                    "x": x,
+                    "y": y
                 }
-                
+
     except KeyboardInterrupt:
         pass
 

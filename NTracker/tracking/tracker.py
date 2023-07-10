@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
@@ -9,7 +10,9 @@ from scipy.optimize import linear_sum_assignment
 from NTracker.tracking.features_tracker import FeaturesTracker
 from NTracker.tracking.mask_iou_tracker import MaskIouTracker
 from NTracker.tracking.position_tracker import PositionTracker
-from NTracker.utils import tracking_utils, image_utils, structures
+from NTracker.utils import image_utils, structures
+
+logger = logging.getLogger(__name__)
 
 
 class Tracker:
@@ -28,19 +31,25 @@ class Tracker:
 
         self.pos_weight = cfg.tracker.pos_weight
         self.features_weight = cfg.tracker.features_weight
-        self.iou_weight = cfg.tracker.iou_weight
+        self.mask_iou_weight = cfg.tracker.mask_iou_weight
 
         if self.pos_weight > 0:
+            logger.info(
+                f"Using position tracker with {self.pos_weight} weight")
             self.pos_tracker = PositionTracker(cfg)
         else:
             self.pos_tracker = None
 
         if self.features_weight > 0:
+            logger.info(
+                f"Using features tracker with {self.features_weight} weight")
             self.features_tracker = FeaturesTracker(cfg)
         else:
             self.features_tracker = None
 
-        if self.iou_weight > 0:
+        if self.mask_iou_weight > 0:
+            logger.info(
+                f"Using mask iou tracker with {self.mask_iou_weight} weight")
             self.mask_iou_tracker = MaskIouTracker(cfg)
         else:
             self.mask_iou_tracker = None
@@ -145,7 +154,7 @@ class Tracker:
 
         if self.mask_iou_tracker is not None:
             dist, thr = self.mask_iou_tracker.compute_distance(curr_keys)
-            dist_mat += (dist * self.iou_weight)
+            dist_mat += (dist * self.mask_iou_weight)
             thr_mat = thr_mat + thr
 
         # Apply the Hungarian (linear-sum-assignment) algorithm
