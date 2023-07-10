@@ -62,7 +62,7 @@ class TorchreidPredictor:
             np.ndarray: The pre-processed image.
         """
         x = torch.tensor(image).to(self.device).float()
-        x = image.permute(2, 0, 1)
+        x = x.permute(2, 0, 1)
         x = self.preprocess_transforms(x)
         return x
 
@@ -76,9 +76,8 @@ class TorchreidPredictor:
             np.ndarray: The output features.
         """
         image = self._preprocess(image)
-        pred = self.torchreid_extractor.model(image)
-        # TODO:
-        print(pred.shape)
+        batch = torch.stack([image], dim=0)
+        pred = self.torchreid_extractor.model(batch)[0]
         return pred.detach().cpu().numpy()
 
     def predict_batch(
@@ -98,6 +97,4 @@ class TorchreidPredictor:
         images = [self._preprocess(i) for i in images]
         images = torch.stack(images, dim=0)
         pred = self.torchreid_extractor.model(images)
-        # TODO:
-        print(pred.shape)
         return pred.detach().cpu().numpy()

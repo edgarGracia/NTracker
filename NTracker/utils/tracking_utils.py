@@ -93,7 +93,7 @@ def iterate_dataset(
             image = image_utils.read_image(image_path[0])
         else:
             image = None
-            image_path = [None]
+            image_path = [Path(ann_path.stem)]
 
         # Read annotation
         instances = annotations_parser.read(ann_path)

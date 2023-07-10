@@ -45,7 +45,8 @@ class OpencvPredictor:
             device (str, optional): Device where execute the model. "CPU" or
                 "CUDA". Defaults to "CPU".
         """
-        self.image_size = image_size
+        self.image_size = ((image_size, image_size)
+                           if isinstance(image_size, int) else image_size)
         self.norm_mean = norm_mean
         self.norm_std = norm_std
         self.mean_output = mean_output
@@ -54,8 +55,7 @@ class OpencvPredictor:
         self.color_mode = color_mode
         self.device = device.lower()
 
-        # TODO: type? V
-        self.model: any
+        self.model: cv2.dnn.Net
         self._load_model(model_path)
 
     def _load_model(self, model_path: Path):
@@ -130,9 +130,9 @@ class OpencvPredictor:
         images = np.stack(images, axis=0)
         self.model.setInput(images)
         pred = self.model.forward()
-        # TODO:
-        # if self.mean_output:
-        #     pred = np.mean(pred, axis=tuple(range(1, pred.ndim)))
-        # if self.flatten_output:
-        #     pred = pred.flatten()
+        if self.mean_output:
+            pred = np.mean(pred, axis=tuple(range(2, pred.ndim)))
+        if self.flatten_output:
+            pred = pred.reshape((pred.shape[0], -1))
+
         return pred

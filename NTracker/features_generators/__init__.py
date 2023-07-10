@@ -1,0 +1,3 @@
+from .features_loader import FeaturesLoader
+from .torchreid_predictor import TorchreidPredictor
+from .opencv_predictor import OpencvPredictor
