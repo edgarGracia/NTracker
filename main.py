@@ -11,7 +11,7 @@ from NTracker.utils.tracking_utils import load_track, save_track
 logger = logging.getLogger(__name__)
 
 
-@hydra.main(version_base=None, config_path="conf", config_name="config")
+@hydra.main(version_base=None, config_path="NTracker/conf", config_name="config")
 def main(cfg: DictConfig):
     """Run the tracker and tasks.
 
