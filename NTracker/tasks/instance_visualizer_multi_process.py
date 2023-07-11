@@ -126,7 +126,7 @@ class InstanceVisualizerMultiProcess:
                     ann_path,
                     image_path[0],
                     tracking_data,
-                    ann_i,
+                    ann_i+start_frame,
                     annotations_parser,
                     self.output_path,
                     self.cfg,
