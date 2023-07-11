@@ -47,7 +47,7 @@ tasks:
   - _target_: NTracker.tasks.WalkDistance
   - _target_: NTracker.tasks.TimeOnArea
     roi_paths:
-      - C:\Users\HE7\Desktop\some_pigs\mask_0.png
+      - C:\Users\HE7\Desktop\some_pigs\roi_0.png
       - C:\Users\HE7\Desktop\some_pigs\bebedero.png
     frame_time: 0.04
     intersect_sources: mask
