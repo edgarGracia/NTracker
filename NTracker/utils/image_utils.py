@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 import cv2
 import numpy as np
@@ -68,3 +68,35 @@ def write_image(path: Union[Path, str], image: np.ndarray):
         image (np.ndarray): Numpy BGR image of shape (H, W, 3) and "uint8" type.
     """
     cv2.imwrite(str(path), image)
+
+
+def resize_image(
+    image: np.ndarray,
+    width: Optional[int] = None,
+    height: Optional[int] = None
+) -> Tuple[np.ndarray, float, float]:
+    """Resize an image to the given width and height.
+
+    Args:
+        image (np.ndarray): The image to resize.
+        width (Optional[int], optional): Desired width.
+            If None it will resize the image with the provided ``height``,
+            maintaining the aspect ration. Defaults to None.
+        height (Optional[int], optional): Desired height.
+            If None it will resize the image with the provided ``width``,
+            maintaining the aspect ration. Defaults to None.
+
+    Returns:
+        Tuple(np.ndarray, float, float): The resized image, the horizontal
+            resize factor and the vertical resize factor.
+    """
+    if width is None and height is None:
+        return image, 1, 1
+    h, w, = image.shape[:2]
+    if width is not None and height is not None:
+        return cv2.resize(image, (width, height)), width / w, height / h
+    if width is not None:
+        f = width / w
+    elif height is not None:
+        f = height / h
+    return (cv2.resize(image, None, fx=f, fy=f), f, f)
