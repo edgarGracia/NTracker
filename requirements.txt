@@ -8,3 +8,4 @@ scipy
 seaborn
 tqdm
 hydra_colorlog 
+PySimpleGUI
