@@ -34,7 +34,7 @@ class AnnotatorGui:
         self.images_path = images_path
         self.annotations_path = annotations_path
         self.tracking_data_path = tracking_data_path
-        
+
         self.window_size = (0, 0)
         self.image = None
         self.image_resize_factor = 1
@@ -58,13 +58,17 @@ class AnnotatorGui:
 
         # Load tracking data
         if tracking_data_path.exists():
-            self.tracking_data = json.loads(tracking_data_path.read_text())
+            self.tracking_data = json.loads(
+                tracking_data_path.read_text(),
+                object_hook=lambda d: {
+                    int(k) if k.isdigit() else k: v for k, v in d.items()}
+            )
         else:
             self.tracking_data = {}
 
-        self._run()
+        self.run()
 
-    def _get_layout(self):
+    def get_layout(self):
         left_panel = sg.Frame("", vertical_alignment="top", layout=[
             [
                 sg.Text("ID:"),
@@ -91,7 +95,7 @@ class AnnotatorGui:
 
         return main_layout
 
-    def _init_fields(self):
+    def init_fields(self):
         self.window_size = self.window.size
         self.window[self.SG_ANNOTS_LIST].update(self.annotations_paths)
 
@@ -137,10 +141,25 @@ class AnnotatorGui:
 
     def set_annotation(self, path: Path):
         self.selected_frame_i = self.annotations_paths.index(path)
-        instances = self.annotations_parser.read(path)
-        self.instances = {
-            i: ins for i, ins in enumerate(instances)
-        }
+        all_instances = self.annotations_parser.read(path)
+        all_instances = {int(ins.id): ins for ins in all_instances}
+        self.instances = {}
+        for k, frames in self.tracking_data.items():
+            if self.selected_frame_i in frames:
+                self.instances[k] = all_instances[
+                    frames[self.selected_frame_i]["original_id"]]
+
+        if not self.instances:
+            self.instances = all_instances
+        else:
+            not_seen_ins = set([ins.id for ins in all_instances.values()]) - \
+                set([ins.id for ins in self.instances.values()])
+
+            for ns in not_seen_ins:
+                k_set = set(self.instances.keys())
+                new_k = sorted(list(set(range(max(k_set)+2)) - k_set))[0]
+                self.instances[new_k] = all_instances[ns]
+
         image_path = path_utils.get_sibling_path(
             path,
             self.images_path,
@@ -175,15 +194,13 @@ class AnnotatorGui:
         try:
             new_key = int(new_key)
         except:
-            print(f"{new_key} is not numerical")
             return
         if self.selected_id is None or self.selected_id not in self.instances:
-            print(f"Bad selected index {self.selected_id}")
             return
 
         tmp_ins = self.instances[new_key] if new_key in self.instances else None
         self.instances[new_key] = self.instances[self.selected_id]
-        del(self.instances[self.selected_id])
+        del (self.instances[self.selected_id])
         if tmp_ins is not None:
             self.instances[self.selected_id] = tmp_ins
 
@@ -193,45 +210,43 @@ class AnnotatorGui:
         self.save_tracking_data()
 
     def update_tracking_data(self):
-        self.tracking_data
-
-    def save_tracking_data(self):
-        for k, ins in self.instances:
+        for k, ins in self.instances.items():
             if k not in self.tracking_data:
                 self.tracking_data[k] = {}
+            cx, cy = structures.box_center(ins.bounding_box)
             self.tracking_data[k][self.selected_frame_i] = {
-                
+                "original_id": ins.id,
+                "x": cx,
+                "y": cy
             }
 
+    def save_tracking_data(self):
         # Check deleted IDs
         to_delete = []
         for k, frames in self.tracking_data.items():
-            if str(self.selected_frame_i) in frames:
-                if int(k) not in self.instances:
-                    del(self.tracking_data[k][self.selected_frame_i])
+            if self.selected_frame_i in frames:
+                if k not in self.instances:
+                    del (self.tracking_data[k][self.selected_frame_i])
                     if not self.tracking_data[k]:
                         to_delete.append(k)
         [self.tracking_data.pop(k) for k in to_delete]
 
-        print(self.tracking_data)
+        self.tracking_data_path.write_text(
+            json.dumps(self.tracking_data, indent=4))
 
-        self.tracking_data_path.write_text(json.dumps(self.tracking_data))
-
-
-
-    def _run(self):
-        self.window = sg.Window("Tracking Annotator", self._get_layout(),
+    def run(self):
+        self.window = sg.Window("Tracking Annotator", self.get_layout(),
                                 resizable=True, size=(1100, 800),
                                 )
         self.window.Finalize()
         # To respond to window resize events
         self.window.bind('<Configure>', "Configure")
 
-        self._init_fields()
+        self.init_fields()
 
         while True:
             event, values = self.window.read()
-            print(event, values)
+            # print(event, values)
 
             # Close window
             if event == sg.WIN_CLOSED:
@@ -249,7 +264,6 @@ class AnnotatorGui:
                 self.on_graph_click(values[self.SG_IMAGE])
             elif event == self.SG_INPUT_ID:
                 self.update_instance_key(values[self.SG_INPUT_ID])
-
 
         self.window.close()
 
