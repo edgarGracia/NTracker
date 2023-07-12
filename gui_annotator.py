@@ -6,10 +6,9 @@ import math
 import cv2
 import numpy as np
 import PySimpleGUI as sg
-from hydra import compose, initialize, initialize_config_dir
-from omegaconf import OmegaConf
+from hydra import compose, initialize_config_dir
 from hydra.utils import instantiate
-from NTracker.utils import path_utils, image_utils
+from NTracker.utils import path_utils
 
 
 from NTracker.visualization import draw
@@ -21,6 +20,7 @@ class AnnotatorGui:
     SG_IMAGE = "SG_IMAGE"
     SG_ANNOTS_LIST = "SG_ANNOTS_LIST"
     SG_INPUT_ID = "SG_INPUT_ID"
+    SG_INPUT_FRAME = "SG_INPUT_FRAME"
     BUTTON_SAVE = "BUTTON_SAVE"
     IMAGE_LIST_WIDTH = 50
 
@@ -28,12 +28,14 @@ class AnnotatorGui:
         self,
         images_path: Path,
         annotations_path: Path,
-        tracking_data_path: Path,
+        input_tracking_data_path: Path,
+        output_tracking_data_path: Path,
         config_path: Path
     ):
         self.images_path = images_path
         self.annotations_path = annotations_path
-        self.tracking_data_path = tracking_data_path
+        self.input_tracking_data_path = input_tracking_data_path
+        self.output_tracking_data_path = output_tracking_data_path
 
         self.window_size = (0, 0)
         self.image = None
@@ -57,9 +59,9 @@ class AnnotatorGui:
         self.annotations_paths = self.annotations_parser.list_annotations()
 
         # Load tracking data
-        if tracking_data_path.exists():
+        if input_tracking_data_path:
             self.tracking_data = json.loads(
-                tracking_data_path.read_text(),
+                input_tracking_data_path.read_text(),
                 object_hook=lambda d: {
                     int(k) if k.isdigit() else k: v for k, v in d.items()}
             )
@@ -74,6 +76,11 @@ class AnnotatorGui:
                 sg.Text("ID:"),
                 sg.Input("", size=(self.IMAGE_LIST_WIDTH-3, 1),
                          key=self.SG_INPUT_ID, enable_events=True)
+            ],
+            [
+                sg.Text("Frame:"),
+                sg.Input("", size=(self.IMAGE_LIST_WIDTH-7, 1),
+                         disabled=True, key=self.SG_INPUT_FRAME)
             ],
             [
                 sg.Listbox([], select_mode=sg.LISTBOX_SELECT_MODE_SINGLE,
@@ -141,6 +148,7 @@ class AnnotatorGui:
 
     def set_annotation(self, path: Path):
         self.selected_frame_i = self.annotations_paths.index(path)
+        self.window[self.SG_INPUT_FRAME].update(self.selected_frame_i)
         all_instances = self.annotations_parser.read(path)
         all_instances = {int(ins.id): ins for ins in all_instances}
         self.instances = {}
@@ -231,7 +239,7 @@ class AnnotatorGui:
                         to_delete.append(k)
         [self.tracking_data.pop(k) for k in to_delete]
 
-        self.tracking_data_path.write_text(
+        self.output_tracking_data_path.write_text(
             json.dumps(self.tracking_data, indent=4))
 
     def run(self):
@@ -288,9 +296,16 @@ def parse_args() -> argparse.Namespace:
         required=True
     )
     ap.add_argument(
-        "-t",
-        "--tracking-data",
-        help="Tracking input/output JSON file",
+        "-o",
+        "--output",
+        help="Output tracking data JSON file",
+        type=Path,
+        required=True
+    )
+    ap.add_argument(
+        "--input",
+        help="Input tracking data file, generated from a tracking job or with "
+             "the annotator itself.",
         type=Path,
         required=True
     )
@@ -310,6 +325,7 @@ if __name__ == "__main__":
     AnnotatorGui(
         args.images,
         args.annotations,
-        args.tracking_data,
+        args.input,
+        args.output,
         args.config
     )
