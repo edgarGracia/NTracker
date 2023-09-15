@@ -62,6 +62,8 @@ class TorchreidPredictor:
             np.ndarray: The pre-processed image.
         """
         x = torch.tensor(image).to(self.device).float()
+        x = x.flip(2)
+        x = x / 255.
         x = x.permute(2, 0, 1)
         x = self.preprocess_transforms(x)
         return x
