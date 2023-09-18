@@ -34,7 +34,7 @@ class Evaluate:
         first_frame: int,
         last_frame: int,
         ground_truth: Union[Path, str],
-        pos_threshold: int = 1,
+        pos_threshold: int = 5,
         output_file: Optional[Union[Path, str]] = "evaluation.json",
     ):
         """Create a tracking evaluation object.
@@ -44,7 +44,7 @@ class Evaluate:
             first_frame (int): First frame to evaluate.
             last_frame (int): Last frame to evaluate.
             pos_threshold (int, optional): Position threshold to match the
-                predicted intances with the ground truth. Defaults to 1.
+                predicted instances with the ground truth. Defaults to 1.
             output_file (Optional[Union[Path, str]], optional): Output file
                 path. Relative paths are appended to the run path. Defaults to
                 "evaluation.json"
@@ -101,8 +101,11 @@ class Evaluate:
             g_frames = gt_data[translate_id[t_k]]
             if (
                 self.last_frame in t_frames
-                and t_frames[self.last_frame]["x"] == g_frames[self.last_frame]["x"]
-                and t_frames[self.last_frame]["y"] == g_frames[self.last_frame]["y"]
+                and almost_equal_pos(
+                    t_frames[self.last_frame],
+                    g_frames[self.last_frame],
+                    self.pos_threshold
+                )
             ):
                 corrects[t_k] = True
 
@@ -126,4 +129,4 @@ class Evaluate:
         
         logger.info(f"Evaluation: {result_str}")
         logger.info(f"Saving evaluation to {self.output_file}")
-        self.output_file.write_text(json.dumps(eval_data))
+        self.output_file.write_text(json.dumps(eval_data, indent=4))
