@@ -1,9 +1,8 @@
-import json
 from pathlib import Path
 from typing import List, Union
 
+import cv2
 import numpy as np
-import pycocotools.mask as Mask
 
 from NTracker.utils import path_utils
 from NTracker.utils.structures import Instance
@@ -48,13 +47,16 @@ class YoloParser:
         Returns:
             List[Instance]: List of instances.
         """
+        # YOLO format (normalized coordinates):
+        #   class, x1, y1, x2, y2, ..., [conf]
+        #   ...
         with open(file_path, "r") as f:
             lines = f.readlines()
         
         instances = []
         for instance_i, line in enumerate(lines):
             polygon = [float(i) for i in line.split(" ")]
-            cls = polygon.pop()
+            cls = polygon.pop(0)
             if self.has_score:
                 score = polygon.pop()
             else:
@@ -69,8 +71,8 @@ class YoloParser:
             ymin = int(polygon[:,1].min())
             xmax = int(polygon[:,0].max())
             ymax = int(polygon[:,1].max())
-            mask = 
-
+            mask = np.zeros((self.image_height, self.image_width), dtype="uint8")
+            mask = cv2.fillPoly(mask, polygon.reshape((-1, 1, 2)))
             instances.append(
                 Instance(
                     bounding_box=(xmin, ymin, xmax, ymax),
@@ -80,31 +82,4 @@ class YoloParser:
                     label_id=cls,
                 )
             )
-
-        annotations = json.loads(Path(file_path).read_text())
-
-        for annot in annotations:
-            if "bbox" in annot:
-                xmin, ymin, w, h = annot["bbox"]
-                box = (round(xmin), round(ymin), round(xmin+w), round(ymin+h))
-            else:
-                box = None
-
-            if "segmentation" in annot:
-                mask = Mask.decode(annot["segmentation"]).astype("bool")
-            else:
-                mask = None
-
-            instances.append(
-                Instance(
-                    bounding_box=box,
-                    score=annot.get("score"),
-                    id=annot.get("id"),
-                    mask=mask,
-                    label=None,
-                    label_id=annot.get("category_id"),
-                    image_id=annot.get("image_id")
-                )
-            )
-
         return instances

@@ -1,0 +1,61 @@
+defaults:
+  - config
+  - _self_
+
+start_frame: null
+end_frame: null
+images_path: null      # To be set
+annotations_path: null # To be set
+
+annotations_parser:
+  _target_: NTracker.parsers.yolo_parser.YoloParser
+  base_path: ${annotations_path}
+  image_width: 
+  image_height: 
+  has_score: True
+
+features_generator:
+  _target_: NTracker.features_generators.dummy.Dummy
+
+tracker:
+  num_instances: null        # To be set
+  filter_n_instances: False  # Only process frames with ``num_instances`` instances
+  init_instances: null       # Number of instances required to start the tracking
+  filter_score: False        # Only take the ``num_instances`` instances with the highest score
+  load_images: False
+  remove_background: True
+  pos_weight:      0.33
+  features_weight: 0.33
+  mask_iou_weight: 0.33
+
+position_tracker:
+  position_threshold: null  # Maximum position displacement between frames
+  square_position: True    # Square the positions matrix
+
+features_tracker:
+  features_buffer: 15
+  features_threshold: null
+  distance_function: euclidean    # "cosine" or "euclidean". (See ``scipy.spatial.distance.cdist``)
+
+tracking_file: null    # Path to the tracking data file to load
+track: True
+
+tasks:
+  # - _target_: NTracker.tasks.InstanceVisualizer
+  - _target_: NTracker.tasks.InstanceVisualizerMultiProcess
+    rename_output: True
+    image_extension: .jpg
+    overlay_path: /path/to/some/overlay/image.png
+  - _target_: NTracker.tasks.CreateVideoFfmpeg
+  - _target_: NTracker.tasks.WalkDistance
+  # - _target_: NTracker.tasks.TimeOnArea
+  #   roi_paths:
+  #     - /path/to/some/image/mask.png
+  #   frame_time: 0.04
+  #   intersect_sources: mask
+  # - _target_: NTracker.tasks.Evaluate
+  #   first_frame: 0
+  #   last_frame: 3000
+  #   ground_truth: /path/to/tracking/data/ground_truth.json
+  #   output_file: evaluation.json
+  
