@@ -101,6 +101,24 @@ def iterate_dataset(
         yield ann_i+start_frame, instances, image, image_path[0]
 
 
+def string_to_int(value: str) -> Union[str, int]:
+    try:
+        return int(value)
+    except ValueError:
+        return value
+
+
+def dict_key_to_int(d: dict) -> dict:
+    d_int = dict()
+    for k, v in d.items():
+        if isinstance(k, str):
+            k = string_to_int(k)
+        if isinstance(v, dict):
+            v = dict_key_to_int(v)
+        d_int[k] = v
+    return d_int
+
+
 def load_track(
     file_path: Union[Path, str]
 ) -> Dict[int, Dict[int, Dict[str, int]]]:
@@ -114,7 +132,9 @@ def load_track(
             {tracked_id: {frame_n: {original_id: ..., x: ..., y: ...}}}
     """
     logger.info(f"Loading tracking data from: {file_path}")
-    return json.loads(Path(file_path).read_text())
+    data = json.loads(Path(file_path).read_text())
+    data = dict_key_to_int(data)
+    return data
 
 
 def save_track(
@@ -133,3 +153,5 @@ def save_track(
         output_file = get_run_path("track.json")
     logger.info(f"Saving tracking data to: {output_file}")
     Path(output_file).write_text(json.dumps(tracking_data))
+
+
