@@ -307,7 +307,6 @@ def parse_args() -> argparse.Namespace:
         help="Input tracking data file, generated from a tracking job or with "
              "the annotator itself.",
         type=Path,
-        required=True
     )
     default_config = Path(__file__).parent / "NTracker/conf/coco_track.yaml"
     ap.add_argument(
