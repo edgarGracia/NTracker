@@ -20,6 +20,7 @@ def run_tracker(cfg: DictConfig) -> Dict[int, Dict[int, Dict[str, int]]]:
             {tracked_id: {frame_n: {original_id: ..., x: ..., y: ...}}}
     """
     logger.info(f"Tracking annotations on: {cfg.annotations_path}")
+    logger.info(f"Applying filters: {cfg.annotations_parser.filters}")
 
     num_instances = cfg.tracker.num_instances
     filter_n_instances = cfg.tracker.filter_n_instances
