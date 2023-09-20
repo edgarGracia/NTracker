@@ -10,8 +10,8 @@ annotations_path: null # To be set
 annotations_parser:
   _target_: NTracker.parsers.yolo_parser.YoloParser
   base_path: ${annotations_path}
-  image_width: 
-  image_height: 
+  image_width:  null        # To be set
+  image_height: null        # To be set
   has_score: True
 
 features_generator:

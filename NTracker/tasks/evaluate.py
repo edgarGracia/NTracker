@@ -70,14 +70,15 @@ class Evaluate:
         # Read the ground truth
         gt_data = load_track(self.ground_truth)
 
-        # Compute translation id dict
-        translate_id = dict()
-        for t_k, t_frames in tracking_data.items():
-            for g_k, g_frames in gt_data.items():
-                assert self.first_frame in g_frames, (
-                    f"Fist frame {self.first_frame} not in ground truth "
-                    f"instance id {g_k}"
-                )
+        # Compute last frame id translation dict
+        translate_id_first = dict()
+        for g_k, g_frames in gt_data.items():
+            assert self.first_frame in g_frames, (
+                f"Last frame {self.first_frame} not in ground truth "
+                f"for instance id {g_k}"
+            )
+            translate_id_first[g_k] = None
+            for t_k, t_frames in tracking_data.items():
                 if (
                     self.first_frame in t_frames
                     and almost_equal_pos(
@@ -86,40 +87,67 @@ class Evaluate:
                         self.pos_threshold
                     )
                 ):
-                    assert t_k not in translate_id, (
-                        f"Instance with duplicated position found. Track ID "
-                        f"{t_k} already assigned to {translate_id[t_k]}"
+                    assert translate_id_first[g_k] is None, (
+                        f"Instance with duplicated position found ({t_k}). "
+                        f"Ground truth ID {g_k} already assigned to "
+                        f"{translate_id_first[g_k]} at frame {self.first_frame}"
                     )
-                    translate_id[t_k] = g_k
+                    translate_id_first[g_k] = t_k
 
-        # Calculate the correct tracked ids
-        corrects = {}
-        for t_k, t_frames in tracking_data.items():
-            if t_k not in translate_id:
-                continue
-            corrects[t_k] = False
-            g_frames = gt_data[translate_id[t_k]]
-            if (
-                self.last_frame in t_frames
-                and almost_equal_pos(
-                    t_frames[self.last_frame],
-                    g_frames[self.last_frame],
-                    self.pos_threshold
-                )
-            ):
-                corrects[t_k] = True
+        # Compute last frame id translation dict
+        translate_id_last = dict()
+        for g_k, g_frames in gt_data.items():
+            assert self.last_frame in g_frames, (
+                f"Last frame {self.last_frame} not in ground truth "
+                f"for instance id {g_k}"
+            )
+            translate_id_last[g_k] = None
+            for t_k, t_frames in tracking_data.items():
+                if (
+                    self.last_frame in t_frames
+                    and almost_equal_pos(
+                        g_frames[self.last_frame],
+                        t_frames[self.last_frame],
+                        self.pos_threshold
+                    )
+                ):
+                    assert translate_id_last[g_k] is None, (
+                        f"Instance with duplicated position found ({t_k}). "
+                        f"Ground truth ID {g_k} already assigned to "
+                        f"{translate_id_last[g_k]} at frame {self.last_frame}"
+                    )
+                    translate_id_last[g_k] = t_k
 
-        lost_ids = [k for k, v in corrects.items() if not v]
-        corrects_num = sum(corrects.values())
-        corrects_rel = corrects_num / len(corrects) if corrects else 0
+        assert sorted(list(translate_id_first.keys())) == \
+            sorted(list(translate_id_last.keys())), (
+                f"Ground truth keys mismatch at first ({self.first_frame}) and "
+                f"last ({self.last_frame}) frames: "
+                f"{sorted(list(translate_id_first.keys()))} "
+                f"{sorted(list(translate_id_last.keys()))}"
+            )
 
-        result_str = f"Evaluation track on frames {self.first_frame} and "
+        incorrect_gt_id = []
+        incorrect_track_id = []
+        for g_k in translate_id_first.keys():
+            if (translate_id_first[g_k] != translate_id_last[g_k]
+                or translate_id_first[g_k] is None):
+                incorrect_gt_id.append(g_k)
+                incorrect_track_id.append(translate_id_last[g_k])
+
+        num_id = len(translate_id_first)
+        corrects_num = num_id - len(incorrect_gt_id)
+        corrects_rel = corrects_num / num_id
+
+        result_str = f"Tracking evaluation on frames {self.first_frame} and "
         result_str += f"{self.last_frame}\n"
-        result_str += f"{corrects_num} of {len(corrects)} ({corrects_rel})\n"
-        result_str += f"Lost IDs: {lost_ids}"
+        result_str += f"{corrects_num} of {num_id} ({corrects_rel})\n"
+        result_str += f"Wrong ground truth IDs: {incorrect_gt_id}\n"
+        result_str += f"Wrong tracked IDs: {incorrect_track_id}"
 
         eval_data = {
-            "lost_ids": lost_ids,
+            "incorrect_gt_id": incorrect_gt_id,
+            "incorrect_track_id": incorrect_track_id,
+            "num_id": num_id,
             "corrects_num": corrects_num,
             "corrects_rel": corrects_rel,
             "first_frame": self.first_frame,
@@ -127,6 +155,6 @@ class Evaluate:
             "str": result_str
         }
         
-        logger.info(f"Evaluation: {result_str}")
+        logger.info(result_str)
         logger.info(f"Saving evaluation to {self.output_file}")
         self.output_file.write_text(json.dumps(eval_data, indent=4))
