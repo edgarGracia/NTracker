@@ -157,10 +157,13 @@ class Tracker:
             dist_mat += (dist * self.mask_iou_weight)
             thr_mat = thr_mat + thr
 
+        # Set the max cost for the non-permitted assignations
+        dist_mat[thr_mat] = dist_mat.max()*10
+
         # Apply the Hungarian (linear-sum-assignment) algorithm
         curr_idx, prev_idx = linear_sum_assignment(dist_mat)
 
-        # Apply threshold for non-permitted assignations
+        # Ignore the non-permitted assignations
         valid = []
         for i, (ci, pi) in enumerate(zip(curr_idx, prev_idx)):
             if not thr_mat[ci, pi]:

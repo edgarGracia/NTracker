@@ -54,7 +54,7 @@ class TimeOnArea:
 
         self.roi_names = []
         self.rois = []
-        if not isinstance(roi_paths, Sequence):
+        if isinstance(roi_paths, (str, Path)):
             roi_paths = [roi_paths]
         for path in roi_paths:
             path = Path(path)
