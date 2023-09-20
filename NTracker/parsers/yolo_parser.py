@@ -4,27 +4,40 @@ from typing import List, Union
 import cv2
 import numpy as np
 
+from NTracker.filters import filter_instance
+from NTracker.filters.base_filter import BaseFilter
+from NTracker.parsers.base_parser import BaseParser
 from NTracker.utils import path_utils
 from NTracker.utils.structures import Instance
 
 
-class YoloParser:
+class YoloParser(BaseParser):
 
-    def __init__(self, base_path: Union[Path, str], image_width: int,
-                 image_height: int, has_score: bool = True):
-        """Create a YoloParser object.
+    def __init__(
+        self,
+        base_path: Union[Path, str],
+        image_width: int,
+        image_height: int,
+        has_score: bool = True,
+        filters: List[BaseFilter] = [],
+    ):
+        """Create a parser for yolo txt files.
 
         Args:
-            base_path (Union[Path, str]): Path to the annotations path.
+            base_path (Union[Path, str]): Path to the annotations.
             image_width (int): The width of the input images.
             image_height (int): The height of the input images.
             has_score (bool, optional): Whether the annotations have the
                 detection confidence. Defaults to True.
+            filters (List[BaseFilter], optional): List of filters to apply to
+                instances. Defaults to [].
         """
+        super().__init__()
         self.base_path = Path(base_path)
         self.has_score = has_score
         self.image_width = image_width
         self.image_height = image_height
+        self.filters = filters
 
     def list_annotations(self) -> List[Path]:
         """Get a sorted list of the annotations on the base path.
@@ -72,14 +85,16 @@ class YoloParser:
             xmax = int(polygon[:,0].max())
             ymax = int(polygon[:,1].max())
             mask = np.zeros((self.image_height, self.image_width), dtype="uint8")
-            mask = cv2.fillPoly(mask, polygon.reshape((-1, 1, 2)))
-            instances.append(
-                Instance(
-                    bounding_box=(xmin, ymin, xmax, ymax),
-                    score=score,
-                    id=instance_i,
-                    mask=mask,
-                    label_id=cls,
-                )
+            mask = cv2.fillPoly(mask, [polygon.reshape((-1, 1, 2))], 1) > 0
+            
+            instance = Instance(
+                bounding_box=(xmin, ymin, xmax, ymax),
+                score=score,
+                id=instance_i,
+                mask=mask,
+                label_id=cls,
             )
+            if filter_instance(self.filters, instance):
+                instances.append(instance)
+
         return instances
