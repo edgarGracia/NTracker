@@ -47,7 +47,7 @@ class AnnotatorGui:
 
         # Get the cfg
         initialize_config_dir(
-            config_dir=str(config_path.parent),
+            config_dir=str(config_path.absolute().parent),
             job_name="annotator",
             version_base=None
         )
