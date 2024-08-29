@@ -6,10 +6,10 @@ A tracker designed for scenarios with a constant number of instances, based on p
 
 ## Installation
 
-``
+```
 pip install -r requirements.txt
 pip install -e .
-``
+```
 
 ## Usage
 1. Run an instance segmentation model and save the results in COCO or YOLO formats.
