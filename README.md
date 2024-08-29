@@ -7,7 +7,8 @@ A tracker designed for scenarios with a constant number of instances, based on p
 ## Installation
 
 ``
-python -m pip install -e .
+pip install -r requirements.txt
+pip install -e .
 ``
 
 ## Usage
